@@ -1,1 +1,2 @@
-# Placeholder so that package will be built.
+def hello_world():
+	print("Hello world")

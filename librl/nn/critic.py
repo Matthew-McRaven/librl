@@ -1,32 +1,26 @@
+import functools
+
+import more_itertools
 import torch
 import torch.nn as nn
 import torch.distributions, torch.nn.init
 import torch.optim
 
 # Network that learns the expected reward from a state.
-class MLPCritic(nn.Module):
-    def __init__(self, input_dimensions, hypers, layers=[100, 100, 1]):
-        super(MLPCritic, self).__init__()
-        self.input_dimensions = input_dimensions
-        self.output_dimensions = layers[-1]
-
-        # Construct a sequentil linear model from the layer specification.
-        linear_layers = []
-        previous = input_dimensions
-        for index,layer in enumerate(layers):
-            linear_layers.append(nn.Linear(previous, layer))
-            linear_layers.append(nn.LeakyReLU())
-            # Add dropout if this is not the last layer.
-            if index < len(layers) - 2:
-                linear_layers.append(nn.Dropout(hypers['dropout']))
-            previous = layer
-        self.linear_layers = nn.Sequential(*linear_layers)
+class ValueCritic(nn.Module):
+    def __init__(self, neural_module, hypers, values=1):
+        super(ValueCritic, self).__init__()
+        self.neural_module = neural_module
+        self.input_dimension = list(more_itertools.always_iterable(neural_module.output_dimension))
+        self.__input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
+        self.output_dimension = values
+        self.output_layer = torch.nn.Linear(self.__input_size, values)
 
         for x in self.parameters():
             if x.dim() > 1:
                 nn.init.kaiming_normal_(x)
 
     def forward(self, input):
-        input = input.view(-1, self.input_dimensions)
-        output = self.linear_layers(input.float())
+        output = self.neural_module(input)
+        output = self.output_layer(output)
         return output
