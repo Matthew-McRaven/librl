@@ -1,2 +1,2 @@
-# graphity
-Research in background independent quantum gravity, also known as quantum graphity.
+# librl
+This is my shared library between my various DRL / DL projects.
