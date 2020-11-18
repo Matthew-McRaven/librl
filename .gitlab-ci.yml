@@ -1,7 +1,7 @@
 image: docker:19
 
 variables:
-  PROJECT_REPO: mcraven/graphity
+  PROJECT_REPO: mcraven/librl
   REMOTE_REPO: 10.0.0.8:15050
 
   # Need to name images per commit to avoid docker-in-docker issues.
@@ -9,9 +9,9 @@ variables:
   LOCAL_CI_VERSION: ci.${CI_COMMIT_SHORT_SHA}.${CI_RUNNER_SHORT_TOKEN}
 
   # Image that holds our library code.
-  IMAGE_NAME: graphity
-  LOCAL_IMAGE_NAME: matthew-mcraven/graphity/graphity
-  REMOTE_IMAGE_NAME: 10.0.0.8:15050/matthew-mcraven/graphity/graphity
+  IMAGE_NAME: librl
+  LOCAL_IMAGE_NAME: matthew-mcraven/librl/librl
+  REMOTE_IMAGE_NAME: 10.0.0.8:15050/matthew-mcraven/librl/librl
 
 before_script:
   # Must log-in to NAS's GitLab docker registy.
@@ -23,7 +23,7 @@ before_script:
 
 stages:
   - Build Library
-  - Test
+  - Deploy to PyPi
 #########
 # Build the boost / python dependencies of out project.
 # All jobs use GIT_LFS_SKIP_SMUDGE, which prevents GIT LFS from pulling large data files.
@@ -34,3 +34,12 @@ Build Dependencies:
   script:
     - docker build -f ./BuildLibrary.Dockerfile -t ${REMOTE_IMAGE_NAME}:${CI_VERSION} .
     - docker push ${REMOTE_IMAGE_NAME}:${CI_VERSION}
+
+Deploy to PyPi:
+  rules:
+    - if: $CI_COMMIT_TAG
+  stage: Deploy to PyPi
+  needs: [Build Dependencies]
+  script:
+    - docker pull ${REMOTE_IMAGE_NAME}:${CI_VERSION}
+    - docker run --rm ${REMOTE_IMAGE_NAME}:${CI_VERSION} /bin/sh -c "pip install twine &&  ls && python setup.py sdist && twine upload -u ${TWINE_USERNAME} -p ${TWINE_PASSWORD} dist/*"
