@@ -63,7 +63,7 @@ class PGBTest(unittest.TestCase):
         self.value_net = librl.nn.critic.ValueCritic(self.value_kernel, self.hypers)
         self.policy_kernel = librl.nn.core.MLPKernel(x)
         self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env.action_space, self.env.observation_space)
-        self.policy_loss = librl.nn.pg_loss.PGB(self.value_net, self.hypers)
+        self.policy_loss = librl.nn.pg_loss.PGB(self.value_net, self.hypers['gamma'])
 
         self.agent = librl.agent.pg.ActorCriticAgent(self.hypers, self.value_net, self.policy_net, self.policy_loss)
         self.agent.train()
@@ -103,7 +103,7 @@ class PPOTest(unittest.TestCase):
         self.value_net = librl.nn.critic.ValueCritic(self.value_kernel, self.hypers)
         self.policy_kernel = librl.nn.core.MLPKernel(x)
         self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env.action_space, self.env.observation_space)
-        self.policy_loss = librl.nn.pg_loss.PPO(self.value_net, self.hypers)
+        self.policy_loss = librl.nn.pg_loss.PPO(self.value_net, self.hypers['gamma'])
 
         self.agent = librl.agent.pg.ActorCriticAgent(self.hypers, self.value_net, self.policy_net, self.policy_loss)
         self.agent.train()
