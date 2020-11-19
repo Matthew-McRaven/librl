@@ -124,4 +124,4 @@ class IndependentNormalActor(nn.Module):
         #print(var, policy.log_prob(actions))
         log_prob = torch.sum(policy.log_prob(actions))
 
-        return actions.view(*self.action_space.shape), log_prob, policy
+        return actions.view(*self.output_dimension), log_prob, policy

@@ -1,14 +1,12 @@
 import torch
 
-# Get hyperparameters about graph search:
+# Get hyperparameters that are common between all agents/environments/tasks.
 def get_default_hyperparams():
     ret = {}
     ret['allow_cuda'] = True
     ret['epochs'] = 10
     ret['episode_count'] = 1
     ret['episode_length'] = 10000
-    ret['graph_size'] = 10
-    ret['toggles_per_step'] = 2
     # Neural net configurations
     ret['critic_steps'] = 10
     ret['dropout'] = .1
