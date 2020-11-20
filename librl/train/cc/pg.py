@@ -1,6 +1,6 @@
 import functools
 
-import librl.agent.pg
+import librl.agent.pg, librl.agent.mdp
 import librl.task
 import librl.train.cc
 
@@ -9,6 +9,10 @@ def policy_gradient_update(agent, episode_iterable):
     # If you introduce a new agent type, and you wish to allow this agent to be updated via
     # policy gradient, you must register an override for this function.
     raise NotImplemented(f"Policy gradient update not implemented for this agent type.")
+
+@policy_gradient_update.register(librl.agent.mdp.RandomAgent)
+def _(agent, tasks_iterable):
+    pass
 
 @policy_gradient_update.register(librl.agent.pg.REINFORCEAgent)
 def _(agent, tasks_iterable):

@@ -1,6 +1,6 @@
 import functools
 
-import librl.agent.pg
+import librl.agent.pg, librl.agent.mdp
 import librl.task
 import librl.train.cc
 
@@ -10,6 +10,11 @@ def compute_meta_loss(agent, task):
     # MAML, you must register an override for this function.
     # Must return an iterable of losses.
     raise NotImplemented(f"Meta loss computation not implemented for this agent type.")
+
+@compute_meta_loss.register(librl.agent.mdp.RandomAgent)
+def _(agent, task):
+    return []
+
 @compute_meta_loss.register(librl.agent.pg.REINFORCEAgent)
 def _(agent, task):
     return (agent.hypers['actor_loss_mul'] * agent.actor_loss(task),)
@@ -22,6 +27,10 @@ def step_meta_optimizer(agent):
         # If you introduce a new agent type, and you wish to allow this agent to be updated via
     # MAML, you must register an override for this function.
     raise NotImplemented(f"Meta optimizer step not implemented for this agent type.")
+
+@step_meta_optimizer.register(librl.agent.mdp.RandomAgent)
+def _(agent):
+    pass
 @step_meta_optimizer.register(librl.agent.pg.REINFORCEAgent)
 def _(agent):
     # TODO: Grab grad clip from agent's hypers.
