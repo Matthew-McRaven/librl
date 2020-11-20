@@ -17,10 +17,13 @@ def _(agent, task):
 
 @compute_meta_loss.register(librl.agent.pg.REINFORCEAgent)
 def _(agent, task):
-    return (agent.hypers['actor_loss_mul'] * agent.actor_loss(task),)
+    return (getattr(agent, 'actor_loss_mult', 1) * agent.actor_loss(task),)
+
 @compute_meta_loss.register(librl.agent.pg.ActorCriticAgent)
 def _(agent, task):
-    return (agent.critic_loss(task), (agent.hypers['actor_loss_mul'] * agent.actor_loss(task)))
+    return (agent.critic_loss(task), getattr(agent,'actor_loss_mult', 1) * agent.actor_loss(task))
+
+
 
 @functools.singledispatch
 def step_meta_optimizer(agent):
@@ -47,7 +50,7 @@ def _(agent):
 # Implement MAML algorithm for meta-RL tasks
 # Assumes there is no interaction between different agents.
 # If components of an agent are shared between tasks, gradient updates are no longer independent.
-def maml_meta_step(task_samples):
+def maml_meta_step(task_samples, adapt_steps = 1):
     for task in task_samples: assert task.problem_type == librl.task.ProblemTypes.ContinuousControl
     # Collect all unique agents in our task list.
     agents = { (id(task.agent),task.agent) for task in task_samples}
@@ -67,7 +70,7 @@ def maml_meta_step(task_samples):
         agent = task.agent
         agent.stuff(slow_parameters[id(agent)])
         # Perform an arbitrary number of adaptation steps
-        for _ in range(agent.hypers['adapt_steps']): librl.train.cc.policy_gradient_step([task])
+        for _ in range(adapt_steps): librl.train.cc.policy_gradient_step([task])
         
         # Sample a task for the meta-adaptation step and compute the loss based on agent type.
         task.sample(task)

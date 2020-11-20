@@ -2,9 +2,9 @@ import functools
 
 import torch
 
-def cc_episodic_trainer(hypers,  task_dist, train_fn):
-    for epoch in range(hypers['epochs']):
-        task_samples = task_dist.sample(hypers['episode_count'])
+def cc_episodic_trainer(train_info, task_dist, train_fn):
+    for epoch in range(train_info['epochs']):
+        task_samples = task_dist.sample(train_info['episode_count'])
         train_fn(task_samples)
 
         rewards, mu_act = len(task_samples) * [None],  len(task_samples) * [None]

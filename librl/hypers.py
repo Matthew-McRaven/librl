@@ -14,9 +14,6 @@ def get_default_hyperparams():
     ret['alpha'] = .0003
     # RL configurations
     ret['gamma'] = .95
-    ret['lambda'] = .99
-    ret['epsilon'] = .5
-    ret['c_1'] = 1
     return ret
 
 

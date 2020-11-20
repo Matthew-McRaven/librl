@@ -1,4 +1,5 @@
 import functools
+import types
 
 import more_itertools
 import torch
@@ -13,9 +14,11 @@ import torch.optim
 # The Categorical distribution is non-differentiable, so this may cause
 # problems for future programmers.
 class MLPKernel(nn.Module):
-    def __init__(self, input_dimensions, layer_list=[200, 100], dropout=.1):
-        super(MLPKernel, self).__init__()
+    def __init__(self, input_dimensions, layer_list=None, dropout=None):
         
+        super(MLPKernel, self).__init__()
+        dropout = dropout if dropout else self.get_default_hyperparameters().dropout
+        layer_list = layer_list if layer_list else self.get_default_hyperparameters().layer_list
         self.input_dimensions = list(more_itertools.always_iterable(input_dimensions))
 
         # Build linear layers from input defnition.
@@ -34,6 +37,13 @@ class MLPKernel(nn.Module):
         for x in self.parameters():
             if x.dim() > 1:
                 nn.init.kaiming_normal_(x)
+
+    @staticmethod
+    def get_default_hyperparameters():
+        ret = {}
+        ret['dropout'] = .1
+        ret['layer_list'] = [200, 100]
+        return types.SimpleNamespace(**ret)
 
     def forward(self, input):
         input = input.view(-1, functools.reduce(lambda x, y: x*y, self.input_dimensions, 1))

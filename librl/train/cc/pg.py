@@ -20,7 +20,7 @@ def _(agent, tasks_iterable):
 
 @policy_gradient_update.register(librl.agent.pg.ActorCriticAgent)
 def _(agent, tasks_iterable):
-    librl.train.cc.update_unshared_cc_agent(agent, tasks_iterable, agent.hypers['critic_steps'], 'critic_loss', 1, 'critic_optimizer')
+    librl.train.cc.update_unshared_cc_agent(agent, tasks_iterable, agent.critic_steps, 'critic_loss', 1, 'critic_optimizer')
     librl.train.cc.update_unshared_cc_agent(agent, tasks_iterable, 1, 'actor_loss', -1, 'actor_optimizer')
 
 # Assumes there is no interaction between different agents.

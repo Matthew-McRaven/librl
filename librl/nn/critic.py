@@ -8,7 +8,7 @@ import torch.optim
 
 # Network that learns the expected reward from a state.
 class ValueCritic(nn.Module):
-    def __init__(self, neural_module, hypers, values=1):
+    def __init__(self, neural_module, values=1):
         super(ValueCritic, self).__init__()
         self.neural_module = neural_module
         self.input_dimension = list(more_itertools.always_iterable(neural_module.output_dimension))

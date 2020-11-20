@@ -9,6 +9,7 @@ For specifications of individual loss functions, see graphity.nn.update_rules
 [2] Proximal Policy Optimization Algorithms, Schulman et al.
 """
 import copy
+import types
 
 import torch
 import torch.nn as nn
@@ -20,14 +21,26 @@ import librl.nn.pg_loss
 # It caches the last generated policy in self.policy_latest, which can be sampled for additional actions.
 @librl.agent.add_agent_attr(allow_update=True, policy_based=True)
 class REINFORCEAgent(nn.Module):
-    def __init__(self, hypers, actor_net):
+    def __init__(self, actor_net, gamma=None, beta=None, alpha=None, l2=None, actor_loss_mult=None):
         super(REINFORCEAgent, self).__init__()
+        gamma = gamma if gamma else librl.nn.pg_loss.VPG.get_default_hyperparameters().gamma
+        self.alpha = alpha if alpha else self.get_default_hyperparameters().alpha
+        self.l2 = l2 if l2 else self.get_default_hyperparameters().l2
+        self.actor_loss_mult = actor_loss_mult if actor_loss_mult else self.get_default_hyperparameters().actor_loss_mult
+        
         # Cache the last generated policy, so that we can sample for additional actions.
         self.policy_latest = None
         self.actor_net = actor_net
-        self._actor_loss = librl.nn.pg_loss.VPG(hypers['gamma'])
-        self.actor_optimizer = torch.optim.Adam(self.actor_net.parameters(), lr=hypers['alpha'], weight_decay=hypers['l2'])
-        self.hypers = hypers
+        self._actor_loss = librl.nn.pg_loss.VPG(gamma, beta)
+        self.actor_optimizer = torch.optim.Adam(self.actor_net.parameters(), lr=self.alpha, weight_decay=self.l2)
+
+    @staticmethod
+    def get_default_hyperparameters():
+        ret = {}
+        ret['alpha'] = .001
+        ret['l2'] = 0.1
+        ret['actor_loss_mult'] = -1
+        return types.SimpleNamespace(**ret)
 
     def act(self, state):
         return self(state)
@@ -54,22 +67,40 @@ class REINFORCEAgent(nn.Module):
 # It caches the last generated policy in self.policy_latest, which can be sampled for additional actions.
 @librl.agent.add_agent_attr(allow_update=True, policy_based=True)
 class ActorCriticAgent(nn.Module):
-    def __init__(self, hypers, critic_net, actor_net, actor_loss):
+    def __init__(self, critic_net, actor_net, actor_loss, actor_alpha=None, actor_l2=None,
+                 critic_alpha=None, critic_l2=None, critic_steps=None, actor_loss_mult=None):
         super(ActorCriticAgent, self).__init__()
-        self.hypers = hypers
+        self.actor_loss_mult = actor_loss_mult if actor_loss_mult else self.get_default_hyperparameters().actor_loss_mult
+        self.actor_alpha = actor_alpha if actor_alpha else self.get_default_hyperparameters().actor_alpha
+        self.actor_l2 = actor_l2 if actor_l2 else self.get_default_hyperparameters().actor_l2
+        self.critic_alpha = critic_alpha if critic_alpha else self.get_default_hyperparameters().critic_alpha
+        self.critic_l2 = critic_l2 if critic_l2 else self.get_default_hyperparameters().critic_l2
+        self.critic_steps = critic_steps if critic_steps else self.get_default_hyperparameters().critic_steps
+
+
+        self.policy_latest = None
+        self.actor_net = actor_net
+        self._actor_loss = actor_loss
+        # TODO: Optimize with something other than ADAM.
+        self.actor_optimizer = torch.optim.Adam(self.actor_net.parameters(), lr=self.actor_alpha, weight_decay=self.actor_l2)
 
         # Trust that the caller gave a reasonable value network.
         self.critic_net = critic_net
         # Goal of our value network (aka the critic) is to make our actual and expected values be equal.
         self._critic_loss = torch.nn.MSELoss(reduction="mean")
         # TODO: Optimize with something other than ADAM.
-        self.critic_optimizer = torch.optim.Adam(self.critic_net.parameters(), lr=hypers['alpha'], weight_decay=hypers['l2'])
+        self.critic_optimizer = torch.optim.Adam(self.critic_net.parameters(), lr=self.critic_alpha, weight_decay=self.critic_l2)
 
-        self.policy_latest = None
-        self.actor_net = actor_net
-        self._actor_loss = actor_loss
-        # TODO: Optimize with something other than ADAM.
-        self.actor_optimizer = torch.optim.Adam(self.actor_net.parameters(), lr=hypers['alpha'], weight_decay=hypers['l2'])
+    @staticmethod
+    def get_default_hyperparameters():
+        ret = {}
+        ret['actor_loss_mult'] = -1
+        ret['actor_alpha'] = .001
+        ret['actor_l2'] = 0.1
+        ret['critic_alpha'] = .001
+        ret['critic_l2'] = 0.1
+        ret['critic_steps'] = 10
+        return types.SimpleNamespace(**ret)
 
     def act(self, state):
         return self(state)
