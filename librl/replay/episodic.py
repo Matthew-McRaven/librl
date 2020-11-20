@@ -5,13 +5,13 @@ import numpy as np
 import librl.utils
 
 # Enapsulate all replay memory of a single task
-# TODO: Allow data to be moved to GPU.
+# TODO: Allow data to be moved to GPU, and make device required.
 class Episode:
-	def __init__(self, obs_space, act_space, episode_length=200, allow_cuda=False):
-		self.state_buffer = torch.zeros([episode_length, *obs_space.shape], dtype=librl.utils.convert_np_torch(obs_space.dtype))
-		self.action_buffer = torch.zeros([episode_length, *act_space.shape], dtype=librl.utils.convert_np_torch(act_space.dtype))
-		self.logprob_buffer = torch.zeros([episode_length], dtype=torch.float32)
-		self.reward_buffer = torch.zeros([episode_length], dtype=torch.float32)
+	def __init__(self, obs_space, act_space, episode_length=200, device='cpu'):
+		self.state_buffer = torch.zeros([episode_length, *obs_space.shape], dtype=librl.utils.convert_np_torch(obs_space.dtype)).to(device)
+		self.action_buffer = torch.zeros([episode_length, *act_space.shape], dtype=librl.utils.convert_np_torch(act_space.dtype)).to(device)
+		self.logprob_buffer = torch.zeros([episode_length], dtype=torch.float32).to(device)
+		self.reward_buffer = torch.zeros([episode_length], dtype=torch.float32).to(device)
 		self.policy_buffer = np.full([episode_length], None, dtype=object)
 		self.done =  None
 
