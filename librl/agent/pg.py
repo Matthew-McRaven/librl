@@ -23,7 +23,6 @@ import librl.nn.pg_loss
 class REINFORCEAgent(nn.Module):
     def __init__(self, actor_net, gamma=None, beta=None, alpha=None, l2=None, actor_loss_mult=None):
         super(REINFORCEAgent, self).__init__()
-        gamma = gamma if gamma else librl.nn.pg_loss.VPG.get_default_hyperparameters().gamma
         self.alpha = alpha if alpha else self.get_default_hyperparameters().alpha
         self.l2 = l2 if l2 else self.get_default_hyperparameters().l2
         self.actor_loss_mult = actor_loss_mult if actor_loss_mult else self.get_default_hyperparameters().actor_loss_mult
@@ -31,7 +30,8 @@ class REINFORCEAgent(nn.Module):
         # Cache the last generated policy, so that we can sample for additional actions.
         self.policy_latest = None
         self.actor_net = actor_net
-        self._actor_loss = librl.nn.pg_loss.VPG(gamma, beta)
+        # Don't overwrite defaults of VPG if we are going to be passing in a None
+        self._actor_loss = librl.nn.pg_loss.VPG(**{k:v for (k,v) in {'gamma':gamma, 'beta':beta}.items() if v is not None})
         self.actor_optimizer = torch.optim.Adam(self.actor_net.parameters(), lr=self.alpha, weight_decay=self.l2)
 
     @staticmethod
