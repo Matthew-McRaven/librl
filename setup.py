@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='librl',
-      version='0.1.2',
+      version='0.1.3',
       description='Library for various DRL and DL projects.',
       author='Matthew McRaven',
       author_email='mkm302@georgetown.edu',
