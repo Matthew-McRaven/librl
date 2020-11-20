@@ -28,6 +28,7 @@ class ContinuousControlTask(_Task):
                 if task.agent.policy_based: episode.log_policy(t, task.agent.policy_latest)
                 x = action.view(-1).detach().cpu().numpy()
                 state, reward, done, _ = task.env.step(x)
+                if task.agent.allow_callback: task.agent.act_callback(state=state, reward=reward)
                 state, reward = torch.tensor(state).to(task.device), torch.tensor(reward).to(task.device)
 
                 episode.log_rewards(t, reward)
