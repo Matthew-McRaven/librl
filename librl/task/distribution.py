@@ -24,5 +24,9 @@ class TaskDistribution:
 		# This lead to accidentally overwriting replay memory.
 		definitions = self._rng.choice(self._tasks, size=(count,), replace=True, p=task_probabilities)
 		return [definition.instance() for definition in definitions]
+		
+	def clear_tasks(self):
+		self._tasks = []
+		self._task_weights = []
 
 

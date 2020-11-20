@@ -14,7 +14,7 @@ class AntWrapper:
         self.hypers = librl.hypers.get_default_hyperparams()
         self.hypers['device'] = 'cpu'
         self.hypers['epochs'] = 5
-        self.hypers['episode_count'] = 2
+        self.hypers['task_count'] = 2
         self.env = gym.make("AntBulletEnv-v0")
         self.env._max_episode_steps = self.hypers['episode_length']
     def setUp(self, agent):

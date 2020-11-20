@@ -4,7 +4,7 @@ import torch
 
 def cc_episodic_trainer(train_info, task_dist, train_fn):
     for epoch in range(train_info['epochs']):
-        task_samples = task_dist.sample(train_info['episode_count'])
+        task_samples = task_dist.sample(train_info['task_count'])
         train_fn(task_samples)
 
         rewards, mu_act = len(task_samples) * [None],  len(task_samples) * [None]
@@ -16,3 +16,8 @@ def cc_episodic_trainer(train_info, task_dist, train_fn):
         mean_action = functools.reduce(lambda x, y: x+y, mu_act, 0).mean()
         max_action = functools.reduce(lambda x, y: torch.max(x.abs(), y.abs()), mu_act)
         print(f"R^bar_({epoch}) = {mean_reward} with {mean_action:.4f} {max_action.data}.")
+
+def cls_trainer(train_info, task_dist, train_fn):
+    for epoch in range(train_info['epochs']):
+        task_samples = task_dist.sample(train_info['task_count'])
+        train_fn(task_samples)
