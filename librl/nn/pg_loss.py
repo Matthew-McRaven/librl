@@ -1,34 +1,24 @@
-from os import stat
-import types
-
 import torch
 import torch.distributions, torch.nn.init
 import torch.optim
 from overrides import overrides, EnforceOverrides
 
 import librl.calc
+import librl.reward
 import librl.task
 ##########################
 # Policy Gradient Losses #
 ##########################
 
-# Implements a framework for policy gradient losses that use  entropy bonuses when computing discounted rewards.
-class PolicyLossWithEntropyBonus(EnforceOverrides):
-
-    def __init__(self, gamma, beta):
-        self.gamma = gamma
-        self.beta = beta
-
-    # Compute discounted rewards with entropy bonus
-    def get_discounted_rewards(self, trajectory):
-        entropy = -self.beta * (trajectory.logprob_buffer[:trajectory.done]) * (trajectory.logprob_buffer[:trajectory.done].exp())
-        bonus_rewards = trajectory.reward_buffer[:trajectory.done] + entropy
-        return librl.calc.discounted_returns(bonus_rewards, gamma=self.gamma)
+# Compute the loss of a multi-trajecory task.
+class PolicyLoss(EnforceOverrides):
+    def __init__(self):
+        super(PolicyLoss, self).__init__()
 
     # Override this method to compute the loss of a single trajectory.
     # Should return a single value.
     def compute_trajectory_loss(self, trajectory):
-        raise NotImplemented("Must implement this in subclass")
+        raise NotImplementedError("Implement in subclass")
 
     # When called with a CC task, run the loss algorithm over each trajectory in the task.
     # This will implicitly perform the outer mean over the the number of trajectories,
@@ -39,42 +29,47 @@ class PolicyLossWithEntropyBonus(EnforceOverrides):
         for trajectory in task.trajectories: losses.append(self.compute_trajectory_loss(trajectory))
         return sum(losses) / len(losses)
 
-# Vanilla policy gradient update / loss function.
-class VPG(PolicyLossWithEntropyBonus):
-    def __init__(self, gamma=.95, beta=0.01):
-        super(VPG, self).__init__(gamma, beta)
-        
+# For any class base on log_prob*reward, this class is convenient.
+# Pass in a function(trajectory)->array[rewards], and this will do the rest.
+# Especially useful for VPG, PGB
+class LogProbBased(PolicyLoss):
+    def __init__(self, reward_fn, explore_bonus_fn=lambda _:0):
+        super(LogProbBased, self).__init__()
+        assert callable(reward_fn) and callable(explore_bonus_fn)
+        self.reward_fn = reward_fn
+        self.explore_bonus_fn = explore_bonus_fn
+    
     @overrides
     def compute_trajectory_loss(self, trajectory):
-        return sum(trajectory.logprob_buffer[:trajectory.done] * self.get_discounted_rewards(trajectory))
-       
-# Policy gradient with baseline update / loss function.
-class PGB(PolicyLossWithEntropyBonus):
-    def __init__(self, critic_net,  gamma=.95, beta=.01):
-        super(PGB, self).__init__(gamma, beta)
-        self.critic_net = critic_net
+        return sum(trajectory.logprob_buffer[:trajectory.done] * self.reward_fn(trajectory) + self.explore_bonus_fn(trajectory))
 
-    @overrides
-    def compute_trajectory_loss(self, trajectory):
-        # Don't propogate gradients into critic when updating actor.
-        with torch.no_grad(): estimated_values = self.critic_net(trajectory.state_buffer).view(-1)[:trajectory.done]
-        return sum(trajectory.logprob_buffer[:trajectory.done] * (self.get_discounted_rewards(trajectory)-estimated_values))
+class VPG(LogProbBased):
+    def __init__(self, gamma=0.975, explore_bonus_fn=lambda _: 0): 
+        assert callable(explore_bonus_fn)
+        super(VPG, self).__init__(librl.reward.to_go_reward(gamma=gamma), explore_bonus_fn=explore_bonus_fn)
+class PGB(LogProbBased):
+    def __init__(self, critic_fn, gamma=0.975, explore_bonus_fn=lambda _: 0): 
+        assert callable(explore_bonus_fn)
+        super(PGB, self).__init__(librl.reward.baseline_to_go(critic_fn, gamma=gamma), explore_bonus_fn=explore_bonus_fn)
 
 # Proximal policy optimization update / loss function.
-class PPO(PolicyLossWithEntropyBonus):
-
-    def __init__(self, critic_net, gamma=0.975, beta=0.01, lambd=.99, epsilon=.5, c_1=1):
-        super(PPO, self).__init__(gamma, beta)
-        self.critic_net = critic_net
+class PPO(PolicyLoss):
+    def __init__(self,  critic_fn, gamma=0.975, lambd=.99, epsilon=.2, c_1=.5, explore_bonus_fn = lambda _: 0):
+        assert callable(explore_bonus_fn)
+        self.critic_fn = critic_fn
+        self.gamma = gamma
         self.lambd = lambd
         self.epsilon = epsilon
         self.c_1 = c_1
+        self.explore_bonus_fn = explore_bonus_fn
 
     @overrides
     def compute_trajectory_loss(self, trajectory):
         # Don't propogate gradients into critic when updating actor.
-        with torch.no_grad(): estimated_values = self.critic_net(trajectory.state_buffer).view(-1)[:trajectory.done]
-        discounted = self.get_discounted_rewards(trajectory)
+        with torch.no_grad(): estimated_values = self.critic_fn(trajectory.state_buffer).view(-1)[:trajectory.done]
+        # Augment rewards with a bonus for exploration, like policy entropy.
+        augmented_rewards = trajectory.reward_buffer[:trajectory.done] + self.explore_bonus_fn(trajectory)
+        discounted = librl.calc.discounted_returns(augmented_rewards, gamma=self.gamma)
         A =  librl.calc.gae(trajectory.reward_buffer[:trajectory.done], estimated_values, self.gamma)
         log_prob_old = librl.calc.old_log_probs(trajectory.action_buffer[:trajectory.done], trajectory.policy_buffer[:trajectory.done])
         # Compute indiviudal terms of the PPO algorithm.

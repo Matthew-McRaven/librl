@@ -10,6 +10,15 @@ def old_log_probs(action_buffer, policy_buffer):
 		logprob_old[t+1] = policy_buffer[t].log_prob(action_buffer[t+1]).sum()
 	return logprob_old
 
+# Compute the temporal difference residual of the rewards.
+def td_residual(reward_buffer, estimated_values, gamma):
+	td = torch.zeros([*reward_buffer.shape], dtype=torch.float32, device=reward_buffer.device)
+	max_t = reward_buffer.shape[-1] - 1
+	assert 0 and "This hasn't been tested yet."
+	td[max_t] = estimated_values[max_t] -  reward_buffer[max_t]
+	td[0:-1] = reward_buffer + gamma*estimated_values[1:] - estimated_values[:-1]
+	return td
+
 # Compute the generalized advantage estimation of our model.
 # Caller must compute estimated values outside of this function.
 def gae(reward_buffer, estimated_values, gamma, lambd=1):
