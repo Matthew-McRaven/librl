@@ -5,6 +5,7 @@ import gym
 
 import librl.agent.pg, librl.agent.mdp
 import librl.nn.core, librl.nn.critic, librl.nn.actor
+import librl.reward
 import librl.task, librl.hypers
 import librl.train.train_loop
 import librl.train.cc.pg, librl.train.cc.maml
@@ -47,7 +48,7 @@ class RandomTest(unittest.TestCase):
     def test_maml(self):
         librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.maml_meta_step)
 
-class ReinforceTest(unittest.TestCase):
+class ReinforceWithEntropyBonusTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.env_wrapper = AntWrapper()
@@ -57,7 +58,7 @@ class ReinforceTest(unittest.TestCase):
         self.policy_kernel = librl.nn.core.MLPKernel(x)
         self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env_wrapper.env.action_space, self.env_wrapper.env.observation_space)
 
-        self.agent = librl.agent.pg.REINFORCEAgent(self.policy_net)
+        self.agent = librl.agent.pg.REINFORCEAgent(self.policy_net, explore_bonus_fn=librl.reward.basic_entropy_bonus())
         self.agent.train()
 
         self.env_wrapper.setUp(self.agent)
@@ -72,7 +73,7 @@ class ReinforceTest(unittest.TestCase):
     def test_maml(self):
         librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.maml_meta_step)
 
-class PGBTest(unittest.TestCase):
+class PGBWithEntropyBonusTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.env_wrapper = AntWrapper()
@@ -83,7 +84,7 @@ class PGBTest(unittest.TestCase):
         self.value_net = librl.nn.critic.ValueCritic(self.value_kernel)
         self.policy_kernel = librl.nn.core.MLPKernel(x)
         self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env_wrapper.env.action_space, self.env_wrapper.env.observation_space)
-        self.policy_loss = librl.nn.pg_loss.PGB(self.value_net)
+        self.policy_loss = librl.nn.pg_loss.PGB(self.value_net, explore_bonus_fn=librl.reward.basic_entropy_bonus())
 
         self.agent = librl.agent.pg.ActorCriticAgent(self.value_net, self.policy_net, self.policy_loss)
         self.agent.train()
@@ -100,7 +101,7 @@ class PGBTest(unittest.TestCase):
     def test_maml(self):
         librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.maml_meta_step)
 
-class PPOTest(unittest.TestCase):
+class PPOWithEntropyBonusTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.env_wrapper = AntWrapper()
@@ -111,7 +112,7 @@ class PPOTest(unittest.TestCase):
         self.value_net = librl.nn.critic.ValueCritic(self.value_kernel)
         self.policy_kernel = librl.nn.core.MLPKernel(x)
         self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env_wrapper.env.action_space, self.env_wrapper.env.observation_space)
-        self.policy_loss = librl.nn.pg_loss.PPO(self.value_net)
+        self.policy_loss = librl.nn.pg_loss.PPO(self.value_net, explore_bonus_fn=librl.reward.basic_entropy_bonus())
 
         self.agent = librl.agent.pg.ActorCriticAgent(self.value_net, self.policy_net, self.policy_loss)
         self.agent.train()

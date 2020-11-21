@@ -10,7 +10,7 @@ class basic_entropy_bonus:
     def __init__(self, beta=0.01):
         self.beta = beta
     def __call__(self, trajectory):
-        return -self.beta * trajectory.logprob_buffer * trajectory.logprob_buffer.exp()
+        return -self.beta * trajectory.logprob_buffer[:trajectory.done] * trajectory.logprob_buffer[:trajectory.done].exp()
 
 ##############################
 # Reward Discounting Methods #

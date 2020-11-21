@@ -21,7 +21,7 @@ import librl.nn.pg_loss
 # It caches the last generated policy in self.policy_latest, which can be sampled for additional actions.
 @librl.agent.add_agent_attr(allow_update=True, policy_based=True)
 class REINFORCEAgent(nn.Module):
-    def __init__(self, actor_net, gamma=None, beta=None, alpha=None, l2=None, actor_loss_mult=None):
+    def __init__(self, actor_net, gamma=None, explore_bonus_fn=lambda _:0, alpha=None, l2=None, actor_loss_mult=None):
         super(REINFORCEAgent, self).__init__()
         self.alpha = alpha if alpha else self.get_default_hyperparameters().alpha
         self.l2 = l2 if l2 else self.get_default_hyperparameters().l2
@@ -31,7 +31,7 @@ class REINFORCEAgent(nn.Module):
         self.policy_latest = None
         self.actor_net = actor_net
         # Don't overwrite defaults of VPG if we are going to be passing in a None
-        self._actor_loss = librl.nn.pg_loss.VPG(**{k:v for (k,v) in {'gamma':gamma, 'beta':beta}.items() if v is not None})
+        self._actor_loss = librl.nn.pg_loss.VPG(**{k:v for (k,v) in {'gamma':gamma, 'explore_bonus_fn':explore_bonus_fn}.items() if v is not None})
         self.actor_optimizer = torch.optim.Adam(self.actor_net.parameters(), lr=self.alpha, weight_decay=self.l2)
 
     @staticmethod
