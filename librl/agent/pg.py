@@ -68,7 +68,7 @@ class REINFORCEAgent(nn.Module):
 @librl.agent.add_agent_attr(allow_update=True, policy_based=True)
 class ActorCriticAgent(nn.Module):
     def __init__(self, critic_net, actor_net, actor_loss, actor_alpha=None, actor_l2=None,
-                 critic_alpha=None, critic_l2=None, critic_steps=None, actor_loss_mult=None):
+                critic_alpha=None, critic_l2=None, critic_steps=None, actor_loss_mult=None):
         super(ActorCriticAgent, self).__init__()
         self.actor_loss_mult = actor_loss_mult if actor_loss_mult else self.get_default_hyperparameters().actor_loss_mult
         self.actor_alpha = actor_alpha if actor_alpha else self.get_default_hyperparameters().actor_alpha

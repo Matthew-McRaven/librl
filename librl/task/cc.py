@@ -72,8 +72,8 @@ class ContinuousControlTask(_Task):
 
 # Example class that allows us to run gym tasks with no extra effort.
 class ContinuousGymTask(ContinuousControlTask):
-	def __init__(self, **kwargs):
-		super(ContinuousGymTask, self).__init__(**kwargs)
-	def init_env(self):
+    def __init__(self, **kwargs):
+        super(ContinuousGymTask, self).__init__(**kwargs)
+    def init_env(self):
         # Most gym environment need no extra init'ing
-		pass
+        pass
