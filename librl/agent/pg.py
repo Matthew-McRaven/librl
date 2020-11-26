@@ -158,7 +158,8 @@ class ActorCriticAgent(nn.Module):
         for trajectory in task.trajectories:
             states = trajectory.state_buffer[:trajectory.done]
             states = states.view(-1, *(states.shape[1:]))
-            losses.append(self._critic_loss(self.critic_net(states), trajectory.reward_buffer.view(-1, 1)[:trajectory.done]))
+            estimated_values = self.critic_net(states).view(-1, 1)
+            losses.append(self._critic_loss( estimated_values, trajectory.reward_buffer.view(-1, 1)[:trajectory.done]))
         return sum(losses)
 
     def steal(self):

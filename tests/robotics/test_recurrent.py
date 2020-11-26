@@ -49,6 +49,33 @@ class ReinforceWithEntropyBonusTest(unittest.TestCase):
 
     def test_maml(self):
         librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.maml_meta_step)
+class PGBTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.env_wrapper = AntWrapper()
+        
+    def setUp(self):
+        x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)
+        self.value_kernel = librl.nn.core.LSTMKernel(x, 113, 1)
+        self.value_net = librl.nn.critic.ValueCritic(self.value_kernel)
+        self.policy_kernel = librl.nn.core.LSTMKernel(x, 211, 3)
+        self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env_wrapper.env.action_space, self.env_wrapper.env.observation_space)
+        self.policy_loss = librl.nn.pg_loss.PGB(self.value_net)
+
+        self.agent = librl.agent.pg.ActorCriticAgent(self.value_net, self.policy_net, self.policy_loss)
+        self.agent.train()
+
+        self.env_wrapper.setUp(self.agent)
+        
+    def tearDown(self):
+        self.env_wrapper.tearDown()
+        del self.policy_kernel, self.policy_net, self.agent, self.value_kernel, self.value_net, self.policy_loss
+
+    #def test_policy_grad(self):
+        #librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.policy_gradient_step)
+
+    def test_maml(self):
+        librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.maml_meta_step)
 
 if __name__ == '__main__':
     unittest.main()

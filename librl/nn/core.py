@@ -68,7 +68,7 @@ class LSTMKernel(nn.Module):
         self.output_dimension = (hidden_size, )
 
 
-        self.recurrent_layer = nn.LSTM(self.__input__size, hidden_size, num_layers = num_layers, bidirectional=bidirectional)
+        self.recurrent_layer = nn.LSTM(self.__input__size, hidden_size, num_layers = num_layers, bidirectional=bidirectional, batch_first=False)
         self.init_hidden()
         # Initialize NN
         for x in self.parameters():
@@ -110,11 +110,28 @@ class LSTMKernel(nn.Module):
 
         return types.SimpleNamespace(**ret)
     def forward(self, input):
+        # Treat the entire input as a single seqence of data.
+        d0, d1 = 1, -1
+        if len(input.shape) == 1: assert self.__input__size == input.shape[-1]
+        elif len(input.shape) == 2: 
+            assert self.__input__size == input.shape[-1]
+            d0 = input.shape[0]
+        elif len(input.shape) == 3: 
+            raise NotImplementedError("No clue how to do this.")
         # TODO: Figure out how to batch hidden states
-        input = input.view(1, -1, self.__input__size)
+        input = input.view(d0, d1, self.__input__size)
         # Push observations through feed forward layers.
-        h0 = self.hidden_state, self.cell_state
+        if self.hidden_state.shape[1] == 1 and input.shape[1] != 1:
+            hidden_state = self.hidden_state.repeat((1,input.shape[1],1))
+        else: hidden_state = self.hidden_state
+
+        if self.cell_state.shape[1] == 1 and input.shape[1] != 1:
+            cell_state = self.cell_state.repeat((1,input.shape[1],1))
+        else: cell_state = self.cell_state
+
+        h0 = hidden_state, cell_state
         output, h1 = self.recurrent_layer(input.float(), h0)
+
         self.hidden_state, self.cell_state = h1
         # We really dont care about the progress / history of our state data.
         self.hidden_state, self.cell_state = self.hidden_state.detach(), self.cell_state.detach()
