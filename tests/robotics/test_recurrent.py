@@ -32,7 +32,7 @@ class ReinforceWithEntropyBonusTest(unittest.TestCase):
         
     def setUp(self):
         x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)
-        self.policy_kernel = librl.nn.core.LSTMKernel(x, 200, 2)
+        self.policy_kernel = librl.nn.core.RecurrentKernel(x, 200, 2, recurrent_unit="LSTM")
         self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env_wrapper.env.action_space, self.env_wrapper.env.observation_space)
 
         self.agent = librl.agent.pg.REINFORCEAgent(self.policy_net, explore_bonus_fn=librl.reward.basic_entropy_bonus())
@@ -56,9 +56,9 @@ class PGBTest(unittest.TestCase):
         
     def setUp(self):
         x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)
-        self.value_kernel = librl.nn.core.LSTMKernel(x, 113, 1)
+        self.value_kernel = librl.nn.core.RecurrentKernel(x, 113, 1, recurrent_unit="GRU")
         self.value_net = librl.nn.critic.ValueCritic(self.value_kernel)
-        self.policy_kernel = librl.nn.core.LSTMKernel(x, 211, 3)
+        self.policy_kernel = librl.nn.core.RecurrentKernel(x, 211, 3, recurrent_unit="RNN")
         self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env_wrapper.env.action_space, self.env_wrapper.env.observation_space)
         self.policy_loss = librl.nn.pg_loss.PGB(self.value_net)
 

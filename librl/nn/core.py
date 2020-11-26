@@ -56,9 +56,9 @@ class MLPKernel(nn.Module):
 
         return output
 
-class LSTMKernel(nn.Module):
-    def __init__(self, input_dimensions, hidden_size, num_layers, bidirectional=False, dropout=None):
-        super(LSTMKernel, self).__init__()
+class RecurrentKernel(nn.Module):
+    def __init__(self, input_dimensions, hidden_size, num_layers, recurrent_unit="LSTM", bidirectional=False, dropout=None):
+        super(RecurrentKernel, self).__init__()
         dropout = dropout if dropout else self.get_default_hyperparameters().dropout
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -67,8 +67,13 @@ class LSTMKernel(nn.Module):
         self.__input__size = functools.reduce(lambda x, y: x*y, self.input_dimensions, 1)
         self.output_dimension = (hidden_size, )
 
-
-        self.recurrent_layer = nn.LSTM(self.__input__size, hidden_size, num_layers = num_layers, bidirectional=bidirectional, batch_first=False)
+        
+        if recurrent_unit.upper() == "LSTM": rec_init = nn.LSTM
+        elif recurrent_unit.upper() == "GRU": rec_init = nn.LSTM
+        elif recurrent_unit.upper() == "RNN": rec_init = nn.LSTM
+        else:rec_init = lambda *x: (_ for _ in ()).throw(NotImplementedError("Choose an implemented recurrent unit"))
+        
+        self.recurrent_layer = rec_init(self.__input__size, hidden_size, num_layers = num_layers, bidirectional=bidirectional, batch_first=False)
         self.init_hidden()
         # Initialize NN
         for x in self.parameters():
@@ -107,8 +112,10 @@ class LSTMKernel(nn.Module):
         ret = {}
         ret['dropout'] = .1
         ret['layer_list'] = [200, 100]
+        ret['recurrent_unit'] = 'RNN'
 
         return types.SimpleNamespace(**ret)
+
     def forward(self, input):
         # Treat the entire input as a single seqence of data.
         d0, d1 = 1, -1
