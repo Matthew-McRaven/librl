@@ -25,8 +25,9 @@ class CheetahEnvWrapper:
 
 class RandomTest(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.env_wrapper = CheetahEnvWrapper()
+    def setUpClass(cls):
+        cls.env_wrapper = CheetahEnvWrapper()
+
     def setUp(self):
         x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)
         self.policy_kernel = librl.nn.core.MLPKernel(x)
@@ -49,8 +50,8 @@ class RandomTest(unittest.TestCase):
 
 class ReinforceTest(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.env_wrapper = CheetahEnvWrapper()
+    def setUpClass(cls):
+        cls.env_wrapper = CheetahEnvWrapper()
         
     def setUp(self):
         x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)
@@ -74,8 +75,8 @@ class ReinforceTest(unittest.TestCase):
 
 class PGBTest(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.env_wrapper = CheetahEnvWrapper()
+    def setUpClass(cls):
+        cls.env_wrapper = CheetahEnvWrapper()
         
     def setUp(self):
         x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)
@@ -102,8 +103,8 @@ class PGBTest(unittest.TestCase):
 
 class PPOTest(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.env_wrapper = CheetahEnvWrapper()
+    def setUpClass(cls):
+        cls.env_wrapper = CheetahEnvWrapper()
         
     def setUp(self):
         x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)

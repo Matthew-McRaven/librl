@@ -27,8 +27,8 @@ class AntWrapper:
 
 class ReinforceWithEntropyBonusTest(unittest.TestCase):
     @classmethod
-    def setUpClass(self):
-        self.env_wrapper = AntWrapper()
+    def setUpClass(cls):
+        cls.env_wrapper = AntWrapper()
         
     def setUp(self):
         x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)

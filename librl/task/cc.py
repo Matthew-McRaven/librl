@@ -16,7 +16,7 @@ class ContinuousControlTask(_Task):
         task.clear_trajectories()
         task.init_env()
         for i in range(task.trajectory_count):
-            state = torch.tensor(task.env.reset()).to(task.device)
+            state = torch.tensor(task.env.reset()).to(task.device) # type: ignore
             episode = librl.replay.Episode(task.env.observation_space, task.env.action_space, task.episode_length)
             episode.log_done(task.episode_length + 1)
             for t in range(task.episode_length):
@@ -29,7 +29,7 @@ class ContinuousControlTask(_Task):
                 x = action.view(-1).detach().cpu().numpy()
                 state, reward, done, _ = task.env.step(x)
                 if task.agent.allow_callback: task.agent.act_callback(state=state, reward=reward)
-                state, reward = torch.tensor(state).to(task.device), torch.tensor(reward).to(task.device)
+                state, reward = torch.tensor(state).to(task.device), torch.tensor(reward).to(task.device) # type: ignore
 
                 episode.log_rewards(t, reward)
                 if done: 

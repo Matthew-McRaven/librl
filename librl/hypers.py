@@ -18,7 +18,7 @@ def get_default_hyperparams():
 
 
 def to_cuda(tensor, allow_cuda):
-    if allow_cuda and torch.cuda.is_available():
+    if allow_cuda and torch.cuda.is_available(): # type: ignore
         return tensor.to(device="cuda")
     else:
         return tensor

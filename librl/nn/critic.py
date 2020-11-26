@@ -14,7 +14,7 @@ class ValueCritic(nn.Module):
         self.input_dimension = list(more_itertools.always_iterable(neural_module.output_dimension))
         self.__input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
         self.output_dimension = values
-        self.output_layer = torch.nn.Linear(self.__input_size, values)
+        self.output_layer = torch.nn.Linear(self.__input_size, values) # type: ignore
 
         for x in self.parameters():
             if x.dim() > 1:

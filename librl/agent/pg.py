@@ -101,7 +101,7 @@ class ActorCriticAgent(nn.Module):
         # Trust that the caller gave a reasonable value network.
         self.critic_net = critic_net
         # Goal of our value network (aka the critic) is to make our actual and expected values be equal.
-        self._critic_loss = torch.nn.MSELoss(reduction="mean")
+        self._critic_loss = torch.nn.MSELoss(reduction="mean") # type: ignore
         # TODO: Optimize with something other than ADAM.
         self.critic_optimizer = torch.optim.Adam(self.critic_net.parameters(), lr=self.critic_alpha, weight_decay=self.critic_l2)
 

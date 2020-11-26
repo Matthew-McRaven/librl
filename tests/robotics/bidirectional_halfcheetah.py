@@ -28,7 +28,7 @@ class HalfCheetahDirecBulletEnv(HalfCheetahBulletEnv):
                 state[0] + self.robot.initial_z,
                 self.robot.body_rpy[1]))  # state[0] is body height above ground, body_rpy[1] is pitch
         done = self._isDone()
-        if not np.isfinite(state).all():
+        if not np.isfinite(state).all(): # type: ignore
             print("~INF~", state)
             done = True
 
@@ -51,7 +51,7 @@ class HalfCheetahDirecBulletEnv(HalfCheetahBulletEnv):
 
         electricity_cost = self.electricity_cost * float(np.abs(a * self.robot.joint_speeds).mean(
         ))  # let's assume we have DC motor with controller, and reverse current braking
-        electricity_cost += self.stall_torque_cost * float(np.square(a).mean())
+        electricity_cost += self.stall_torque_cost * float(np.square(a).mean()) # type: ignore
 
         joints_at_limit_cost = float(self.joints_at_limit_cost * self.robot.joints_at_limit)
         debugmode = 0

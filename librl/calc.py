@@ -2,7 +2,7 @@ import torch
 
 # Given a buffer of actions and policies, compute the log probability of choosing action[t+1] under policy[t]
 def old_log_probs(action_buffer, policy_buffer):
-    logprob_old = torch.zeros([*policy_buffer.shape], dtype=torch.float32, device=action_buffer.device)
+    logprob_old = torch.zeros([*policy_buffer.shape], dtype=torch.float32, device=action_buffer.device) # type: ignore
     max_t = policy_buffer.shape[-1] - 1
     # TODO: Figure out what the bootstrap value should be
     logprob_old[max_t] = policy_buffer[max_t].log_prob(action_buffer[max_t]).sum()
@@ -12,7 +12,7 @@ def old_log_probs(action_buffer, policy_buffer):
 
 # Compute the temporal difference residual of the rewards.
 def td_residual(reward_buffer, estimated_values, gamma):
-    td = torch.zeros([*reward_buffer.shape], dtype=torch.float32, device=reward_buffer.device)
+    td = torch.zeros([*reward_buffer.shape], dtype=torch.float32, device=reward_buffer.device) # type: ignore
     max_t = reward_buffer.shape[-1] - 1
     assert 0 and "This hasn't been tested yet."
     td[max_t] = estimated_values[max_t] -  reward_buffer[max_t]
@@ -22,7 +22,7 @@ def td_residual(reward_buffer, estimated_values, gamma):
 # Compute the generalized advantage estimation of our model.
 # Caller must compute estimated values outside of this function.
 def gae(reward_buffer, estimated_values, gamma, lambd=1):
-    advantage = torch.zeros([*reward_buffer.shape], dtype=torch.float32, device=reward_buffer.device)
+    advantage = torch.zeros([*reward_buffer.shape], dtype=torch.float32, device=reward_buffer.device) # type: ignore
     max_t = reward_buffer.shape[-1] - 1
     # TODO: Determine how to predict "last" advantage value
     previous, advantage[max_t] = 0, estimated_values[max_t] -  reward_buffer[max_t]
@@ -37,7 +37,7 @@ def gae(reward_buffer, estimated_values, gamma, lambd=1):
 # May cause excessively deep gradients, but computes in linear time.	
 def discounted_returns(reward_buffer, gamma):
     assert 0.0 < gamma and gamma <= 1.0
-    discounted_rewards = torch.zeros([*reward_buffer.shape], dtype=torch.float32, device=reward_buffer.device)
+    discounted_rewards = torch.zeros([*reward_buffer.shape], dtype=torch.float32, device=reward_buffer.device) # type: ignore
     
     # By iterating backwards over the rewards, we are computing a linear filter on the output.
     # That is: O[t] = I[t] + gamma*O[t+1], where I is the input array and O is the output array.

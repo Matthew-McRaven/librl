@@ -12,8 +12,8 @@ import librl.utils
 class TestClassification(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.dist = librl.task.TaskDistribution()
+    def setUpClass(cls):
+        cls.dist = librl.task.TaskDistribution()
 
     def tearDown(self):
         self.dist.clear_tasks()

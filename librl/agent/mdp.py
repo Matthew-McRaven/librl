@@ -24,10 +24,10 @@ class RandomAgent(nn.Module):
     def forward(self, adj):
         count = adj.view(-1, self.__input_size).shape[0]
         actions = [self.action_space.sample() for _ in range(count)]
-        randoms = torch.tensor(actions, device=adj.device)
+        randoms = torch.tensor(actions, device=adj.device) # type: ignore
         # Currently makes little sense to ask "what was the probability of drawing this random action"
         # with gym spaces. TODO: Make log prob a real, useful number.
-        return randoms, torch.full((count,), float('nan'))
+        return randoms, torch.full((count,), float('nan')) # type: ignore
 
     # Random agent has no parameters.
     def steal(self):

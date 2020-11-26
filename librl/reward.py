@@ -20,7 +20,7 @@ class basic_entropy_bonus:
 
 # The reward at each timestep is the sum of all rewards over the epoch
 def total_reward(trajectory):
-    return torch.full(*trajectory.reward_buffer.shape, torch.sum(trajectory.reward_buffer))
+    return torch.full(*trajectory.reward_buffer.shape, torch.sum(trajectory.reward_buffer)) # type: ignore
 
 # At each timestep, compute the infinite-horizon discounted reward.
 class to_go_reward:

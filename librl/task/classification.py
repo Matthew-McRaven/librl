@@ -15,8 +15,8 @@ class ClassificationTask(_Task):
         assert classifier is not None and criterion is not None
         assert (train_data_iter is not None) or (validation_data_iter is not None)
         # Train / validation data should be an iterable of data loaders rather than a single data loader.
-        assert not isinstance(train_data_iter, torch.utils.data.DataLoader)
-        assert not isinstance(validation_data_iter, torch.utils.data.DataLoader)
+        assert not isinstance(train_data_iter, torch.utils.data.DataLoader) # type: ignore
+        assert not isinstance(validation_data_iter, torch.utils.data.DataLoader) # type: ignore
 
         self.classifier = classifier
         self.criterion = criterion

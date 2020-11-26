@@ -52,7 +52,7 @@ class MLPKernel(nn.Module):
         # Push observations through feed forward layers.
         output = self.linear_layers(input.float())
 
-        assert not torch.isnan(output).any()
+        assert not torch.isnan(output).any() # type: ignore
 
         return output
 
@@ -76,8 +76,9 @@ class LSTMKernel(nn.Module):
                 nn.init.kaiming_normal_(x)
 
     def init_hidden(self):
-        self.hidden_state = torch.zeros(self.num_layers, 1, self.hidden_size)
-        self.cell_state = torch.zeros(self.num_layers, 1, self.hidden_size)
+
+        self.hidden_state = torch.zeros(self.num_layers, 1, self.hidden_size) # type: ignore
+        self.cell_state = torch.zeros(self.num_layers, 1, self.hidden_size) # type: ignore
         nn.init.kaiming_normal_(self.hidden_state)
         nn.init.kaiming_normal_(self.cell_state)
 
@@ -117,6 +118,6 @@ class LSTMKernel(nn.Module):
         self.hidden_state, self.cell_state = h1
         # We really dont care about the progress / history of our state data.
         self.hidden_state, self.cell_state = self.hidden_state.detach(), self.cell_state.detach()
-        assert not torch.isnan(output).any()
+        assert not torch.isnan(output).any() # type: ignore
 
         return output

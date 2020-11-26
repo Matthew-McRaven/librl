@@ -8,10 +8,10 @@ import librl.utils
 # TODO: Allow data to be moved to GPU, and make device required.
 class Episode:
     def __init__(self, obs_space, act_space, episode_length=200, device='cpu'):
-        self.state_buffer = torch.zeros([episode_length, *obs_space.shape], dtype=librl.utils.convert_np_torch(obs_space.dtype)).to(device)
-        self.action_buffer = torch.zeros([episode_length, *act_space.shape], dtype=librl.utils.convert_np_torch(act_space.dtype)).to(device)
-        self.logprob_buffer = torch.zeros([episode_length], dtype=torch.float32).to(device)
-        self.reward_buffer = torch.zeros([episode_length], dtype=torch.float32).to(device)
+        self.state_buffer = torch.zeros([episode_length, *obs_space.shape], dtype=librl.utils.convert_np_torch(obs_space.dtype)).to(device) # type: ignore
+        self.action_buffer = torch.zeros([episode_length, *act_space.shape], dtype=librl.utils.convert_np_torch(act_space.dtype)).to(device) # type: ignore
+        self.logprob_buffer = torch.zeros([episode_length], dtype=torch.float32).to(device) # type: ignore
+        self.reward_buffer = torch.zeros([episode_length], dtype=torch.float32).to(device) # type: ignore
         self.policy_buffer = np.full([episode_length], None, dtype=object)
         self.done =  None
 

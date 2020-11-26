@@ -57,7 +57,7 @@ class BiCategoricalActor(nn.Module):
         output = self.neural_module(input)
         actions = []
 
-        assert not torch.isnan(output).any()
+        assert not torch.isnan(output).any() # type: ignore
 
         # Treat the outputs of my softmaxes as the probability distribution for my NN.
         first_preseed = self.output_layers["first"  ](output).view(-1)
@@ -68,8 +68,8 @@ class BiCategoricalActor(nn.Module):
         # Since softmax will compute e(x), I want all x's to be small.
         # To do this, I subtract the maximum value from every element, moving my
         # numbers from (-∞,∞) to (-∞,0]. This makes softmax more stable
-        first_seed = first_preseed - torch.max(first_preseed)
-        second_seed = second_preseed - torch.max(second_preseed)
+        first_seed = first_preseed - torch.max(first_preseed) # type: ignore
+        second_seed = second_preseed - torch.max(second_preseed) # type: ignore
         first_seed = self.softmax(first_seed)
         second_seed = self.softmax(second_seed)
         
@@ -81,7 +81,7 @@ class BiCategoricalActor(nn.Module):
         # Each actions is drawn independtly of others, so joint prob
         # is all of them multiplied together. However, since we have logprobs,
         # we need to sum instead.
-        log_prob = torch.sum(policy.log_prob(actions))
+        log_prob = torch.sum(policy.log_prob(actions)) # type: ignore
         # Arrange actions so they look like actions from other models.
 
         return actions, log_prob, policy
@@ -103,7 +103,7 @@ class IndependentNormalActor(nn.Module):
         # These random number generators are used to generate edge pairs.
         self.mu_layer = nn.Linear(self.__input_size, self.__output_size)
         self.cov_diag = nn.Linear(self.__input_size, self.__output_size)
-        self.make_sane = torch.nn.Softsign()
+        self.make_sane = torch.nn.Softsign() # type: ignore
 
         # Initialize NN
         for x in self.parameters():
@@ -130,7 +130,7 @@ class IndependentNormalActor(nn.Module):
         # Variance must be +'ve, and softplus does this nicely.
         # For other activation ideas, see:
         #    https://pytorch.org/docs/stable/nn.html#non-linear-activations-weighted-sum-nonlinearity
-        var = (torch.nn.Softsign()(self.cov_diag(output)) + 1)/2
+        var = (torch.nn.Softsign()(self.cov_diag(output)) + 1)/2 # type: ignore
 
         # Encapsulate our poliy in an object so downstream classes don't
         # need to know what kind of distribution to re-create.
@@ -146,6 +146,6 @@ class IndependentNormalActor(nn.Module):
         # is all of them multiplied together. However, since we have logprobs,
         # we need to sum instead.
         #print(var, policy.log_prob(actions))
-        log_prob = torch.sum(policy.log_prob(actions))
+        log_prob = torch.sum(policy.log_prob(actions)) # type: ignore
 
         return actions.view(*self.output_dimension), log_prob, policy

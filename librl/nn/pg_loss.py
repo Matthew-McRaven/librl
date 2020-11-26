@@ -39,7 +39,7 @@ class LogProbBased(PolicyLoss):
         self.reward_fn = reward_fn
         self.explore_bonus_fn = explore_bonus_fn
     
-    @overrides
+    @overrides # type: ignore
     def compute_trajectory_loss(self, trajectory):
         return sum(trajectory.logprob_buffer[:trajectory.done] * self.reward_fn(trajectory) + self.explore_bonus_fn(trajectory))
 
@@ -63,7 +63,7 @@ class PPO(PolicyLoss):
         self.c_1 = c_1
         self.explore_bonus_fn = explore_bonus_fn
 
-    @overrides
+    @overrides # type: ignore
     def compute_trajectory_loss(self, trajectory):
         # Don't propogate gradients into critic when updating actor.
         with torch.no_grad(): estimated_values = self.critic_fn(trajectory.state_buffer).view(-1)[:trajectory.done]
@@ -74,7 +74,7 @@ class PPO(PolicyLoss):
         log_prob_old = librl.calc.old_log_probs(trajectory.action_buffer[:trajectory.done], trajectory.policy_buffer[:trajectory.done])
         # Compute indiviudal terms of the PPO algorithm.
         ratio = trajectory.logprob_buffer[:trajectory.done].exp() / (log_prob_old.exp() + 1e-6)
-        lhs, rhs = ratio * A, torch.clamp(ratio, 1-self.epsilon, 1+self.epsilon) * A
-        minterm = torch.min(lhs, rhs)
+        lhs, rhs = ratio * A, torch.clamp(ratio, 1-self.epsilon, 1+self.epsilon) * A # type: ignore
+        minterm = torch.min(lhs, rhs) # type: ignore
         subterm = self.c_1 * (discounted-estimated_values.view(-1)).pow(2)
-        return torch.sum(minterm - subterm)
+        return torch.sum(minterm - subterm) # type: ignore

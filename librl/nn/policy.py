@@ -26,7 +26,7 @@ class BiCategoricalPolicy:
         # Sample edge pair to toggle
         first_sample = self.first_dist.sample(size)
         second_sample = self.first_dist.sample(size)
-        return torch.stack([first_sample, second_sample], dim=-1)
+        return torch.stack([first_sample, second_sample], dim=-1) # type: ignore
 
 # Action distribution based on a multivariate-normal distribution.
 # Allows actions to be cross-correlated
@@ -55,7 +55,7 @@ class RepeatedNormal:
 
     def log_prob(self, actions):
         # Since I'm dealing log probs rather than probs, must add together.
-        return torch.sum(self.dist.log_prob(actions))
+        return torch.sum(self.dist.log_prob(actions)) # type: ignore
 
     def sample(self, size):
         return self.dist.rsample(size)
@@ -76,4 +76,4 @@ class CheatingNormal:
         return -a*b
 
     def sample(self, size):
-        return self.mu + self.var.sqrt()*torch.randn((*size, *self.mu.shape))
+        return self.mu + self.var.sqrt()*torch.randn((*size, *self.mu.shape)) # type: ignore
