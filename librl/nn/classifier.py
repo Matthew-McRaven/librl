@@ -17,7 +17,18 @@ class Classifier(nn.Module):
         self.__input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
         self.output_layer = nn.Linear(self.__input_size, self.output_dimension)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.003, weight_decay=0.1)
-        
+    
+    def recurrent(self):
+        return self.neural_module.recurrent()
+
+    def save_hidden(self):
+        assert self.recurrent()
+        return self.neural_module.save_hidden()
+
+    def restore_hidden(self, state=None):
+        assert self.recurrent()
+        self.neural_module.restore_hidden(state)
+
     def forward(self, inputs):
         outputs = self.neural_module(inputs).view(-1, *self.input_dimension)
         outputs = self.output_layer(outputs)

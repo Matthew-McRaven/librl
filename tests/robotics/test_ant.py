@@ -2,6 +2,7 @@ import functools
 import unittest
 
 import gym
+import pybullet_envs.gym_locomotion_envs
 
 import librl.agent.pg, librl.agent.mdp
 import librl.nn.core, librl.nn.critic, librl.nn.actor

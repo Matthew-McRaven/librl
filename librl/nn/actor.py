@@ -41,6 +41,17 @@ class BiCategoricalActor(nn.Module):
         for x in self.parameters():
             if x.dim() > 1:
                 nn.init.kaiming_normal_(x)
+                
+    def recurrent(self):
+        return self.neural_module.recurrent()
+
+    def save_hidden(self):
+        assert self.recurrent()
+        self.neural_module.save_hidden()
+
+    def restore_hidden(self, state=None):
+        assert self.recurrent()
+        self.neural_module.restore_hidden(state)
 
     def forward(self, input):
         output = self.neural_module(input)
@@ -75,6 +86,8 @@ class BiCategoricalActor(nn.Module):
 
         return actions, log_prob, policy
 
+
+
 class IndependentNormalActor(nn.Module):
     def __init__(self, neural_module, action_space, observation_space, policy_ctor=librl.nn.policy.RepeatedNormal):
         super(IndependentNormalActor, self).__init__()
@@ -96,6 +109,17 @@ class IndependentNormalActor(nn.Module):
         for x in self.parameters():
             if x.dim() > 1:
                 nn.init.kaiming_normal_(x)
+
+    def recurrent(self):
+        return self.neural_module.recurrent()
+        
+    def save_hidden(self):
+        assert self.recurrent()
+        return self.neural_module.save_hidden()
+
+    def restore_hidden(self, state=None):
+        assert self.recurrent()
+        self.neural_module.restore_hidden(state)
 
     def forward(self, input):
         output = self.neural_module(input)

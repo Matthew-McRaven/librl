@@ -42,6 +42,20 @@ class REINFORCEAgent(nn.Module):
         ret['actor_loss_mult'] = -1
         return types.SimpleNamespace(**ret)
 
+    def recurrent(self):
+        return self.actor_net.recurrent()
+
+    def save_hidden(self):
+        assert self.actor_net.recurrent()
+        return {id(self.actor_net):self.actor_net.save_hidden()}
+
+    def restore_hidden(self, state_dict=None):
+        assert self.actor_net.recurrent()
+        id_actor = id(self.actor_net)
+        if state_dict == None: self.actor_net.restore_hidden()
+        elif id(id_actor) in state_dict: self.actor_net.restore_hidden(state_dict[id_actor])
+        else: assert 0 and "Missing keys!"
+
     def act(self, state):
         return self(state)
 
@@ -102,6 +116,27 @@ class ActorCriticAgent(nn.Module):
         ret['critic_steps'] = 10
         return types.SimpleNamespace(**ret)
 
+    def recurrent(self):
+        return self.actor_net.recurrent() or self.critic_net.recurrent()
+
+    def save_hidden(self):
+        ret = {}
+        assert self.recurrent()
+        if self.actor_net.recurrent(): ret[id(self.actor_net)] = self.actor_net.save_hidden()
+        if self.critic_net.recurrent(): ret[id(self.critic_net)] = self.critic_net.save_hidden()
+        return ret
+            
+
+    def restore_hidden(self, state_dict=None):
+        if self.actor_net.recurrent():
+            id_actor = id(self.actor_net)
+            if state_dict != None and id(id_actor) in state_dict: self.actor_net.restore_hidden(state_dict[id_actor])
+            else: self.actor_net.restore_hidden()
+        if self.critic_net.recurrent():
+            id_critic = id(self.critic_net)
+            if state_dict != None and id(id_critic) in state_dict: self.critic_net.restore_hidden(state_dict[id_critic])
+            else: self.critic_net.restore_hidden()
+            
     def act(self, state):
         return self(state)
 

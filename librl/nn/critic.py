@@ -20,6 +20,19 @@ class ValueCritic(nn.Module):
             if x.dim() > 1:
                 nn.init.kaiming_normal_(x)
 
+    def recurrent(self):
+        return self.neural_module.recurrent()
+
+    def save_hidden(self):
+        assert self.recurrent()
+        return self.neural_module.save_hidden()
+
+
+    def restore_hidden(self, state=None):
+        assert self.recurrent()
+        return self.neural_module.restore_hidden(state)
+
+
     def forward(self, input):
         output = self.neural_module(input)
         output = self.output_layer(output)
