@@ -71,8 +71,8 @@ class PGBTest(unittest.TestCase):
         self.env_wrapper.tearDown()
         del self.policy_kernel, self.policy_net, self.agent, self.value_kernel, self.value_net, self.policy_loss
 
-    #def test_policy_grad(self):
-        #librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.policy_gradient_step)
+    def test_policy_grad(self):
+        librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.policy_gradient_step)
 
     def test_maml(self):
         librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.maml_meta_step)
