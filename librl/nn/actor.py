@@ -54,7 +54,7 @@ class BiCategoricalActor(nn.Module):
         self.neural_module.restore_hidden(state)
 
     def forward(self, input):
-        output = self.neural_module(input)
+        output = self.neural_module(input).view(-1, self.__input_size)
         actions = []
 
         assert not torch.isnan(output).any() # type: ignore
@@ -122,7 +122,7 @@ class IndependentNormalActor(nn.Module):
         self.neural_module.restore_hidden(state)
 
     def forward(self, input):
-        output = self.neural_module(input)
+        output = self.neural_module(input).view(-1, self.__input_size)
 
         # Treat the output of NN as seed of a mu network.
         mu = self.mu_layer(output)
