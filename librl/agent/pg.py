@@ -130,11 +130,11 @@ class ActorCriticAgent(nn.Module):
     def restore_hidden(self, state_dict=None):
         if self.actor_net.recurrent():
             id_actor = id(self.actor_net)
-            if state_dict != None and id(id_actor) in state_dict: self.actor_net.restore_hidden(state_dict[id_actor])
+            if state_dict != None and id_actor in state_dict: self.actor_net.restore_hidden(state_dict[id_actor])
             else: self.actor_net.restore_hidden()
         if self.critic_net.recurrent():
             id_critic = id(self.critic_net)
-            if state_dict != None and id(id_critic) in state_dict: self.critic_net.restore_hidden(state_dict[id_critic])
+            if state_dict != None and id_critic in state_dict: self.critic_net.restore_hidden(state_dict[id_critic])
             else: self.critic_net.restore_hidden()
             
     def act(self, state):
