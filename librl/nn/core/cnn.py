@@ -51,13 +51,25 @@ class pool_def(conpool_core):
         if stride is None:
             self.stride = self.kernel
         self.pool_type = pool_type
+def construct_layers(conv_layers, input_dimensions, input_channels, dropout, dims=2):
+        assert 1 <= dims <= 2
+        conv_ctor, convt_ctor, pool_ctor = None, None, {}
 
-def construct_layers(conv_layers, input_dimensions, input_channels, dropout):
+        if dims == 1:
+            conv_ctor = nn.Conv1d
+            convt_ctor = nn.ConvTranspose1d
+            pool_ctor['max'] = nn.MaxPool1d
+            pool_ctor['avg'] = nn.AvgPool1d
+        if dims == 2:
+            conv_ctor = nn.Conv2d
+            convt_ctor = nn.ConvTranspose2d
+            pool_ctor['max'] = nn.MaxPool2d
+            pool_ctor['avg'] = nn.AvgPool2d
+
         # Construct convolutional layers.
-        H = input_dimensions[0]
-        W = input_dimensions[1]
+        curret_dims = list(input_dimensions)
         conv_list = []
-        non_linear = torch.nn.LeakyReLU
+        non_linear = torch.nn.LeakyReLU()
         nlo_name = "ReLU"
         output_channels = input_channels
         output_dimension = (*input_dimensions, input_channels)
@@ -69,31 +81,31 @@ def construct_layers(conv_layers, input_dimensions, input_channels, dropout):
         for index, item in enumerate(conv_layers):
             # Next item is a convolutional layer, so construct one and re-compute H,W, channels.
             if isinstance(item, conv_def):
-                conv_list.append((f'conv{index}', nn.Conv2d(input_channels, item.out_channels, item.kernel,
+                conv_list.append((f'conv{index}', conv_ctor(output_channels, item.out_channels, item.kernel,
                     stride=item.stride, padding=item.padding, dilation=item.dilation, padding_mode=item.padding_type)))
-                H = resize_convolution(H, item.kernel, item.dilation, item.stride, item.padding)
-                W = resize_convolution(W, item.kernel, item.dilation, item.stride, item.padding)
+                for dim, val in enumerate(curret_dims):
+                    curret_dims[dim] = resize_convolution(val, item.kernel, item.dilation, item.stride, item.padding)
                 output_channels = item.out_channels
             # Next item is a transposed convolutional layer.
             if isinstance(item, conv_transpose_def):
-                conv_list.append((f'conv{index}', nn.ConvTranspose2d(input_channels, item.out_channels, item.kernel,
+                conv_list.append((f'conv{index} transpose', convt_ctor(input_channels, item.out_channels, item.kernel,
                     stride=item.stride, padding=item.padding, dilation=item.dilation, padding_mode=item.padding_type, output_padding=item.output_padding)))
-                H = resize_transpose_convolution(H, item.kernel, item.dilation, item.stride, item.padding, item.output_padding)
-                W = resize_transpose_convolution(W, item.kernel, item.dilation, item.stride, item.padding, item.output_padding)
+                for dim, val in enumerate(curret_dims):
+                    curret_dims[dim] = resize_convolution(val, item.kernel, item.dilation, item.stride, item.padding)
                 output_channels = item.out_channels
             # Next item is a pooling layer, so construct one and re-compute H,W.
             elif isinstance(item, pool_def):
                 if item.pool_type.lower() == 'avg':
-                    conv_list.append((f'avgpool{index}',nn.AvgPool2d(item.kernel, stride=item.stride, padding=item.padding)))
-                    H = resize_convolution(H, item.kernel, 1, item.stride, item.padding)
-                    W = resize_convolution(W, item.kernel, 1, item.stride, item.padding)
+                    conv_list.append((f'avgpool{index}', pool_ctor['avg'](item.kernel, stride=item.stride, padding=item.padding)))
+                    assert item.dilation == 1
                 elif item.pool_type.lower() == 'max':
-                    conv_list.append((f'maxpool{index}', nn.MaxPool2d(item.kernel, stride=item.stride, padding=item.padding, dilation=item.dilation)))
-                    H = resize_convolution(H, item.kernel, item.dilation, item.stride, item.padding)
-                    W = resize_convolution(W, item.kernel, item.dilation, item.stride, item.padding)
+                    conv_list.append((f'maxpool{index}', pool_ctor['max'](item.kernel, stride=item.stride, padding=item.padding, dilation=item.dilation)))
                 else:
                     raise NotImplementedError(f"{item.pool_type.lower()} is not an implemented form of pooling.")
-            output_dimension = (output_channels, H, W)
+                for dim, val in enumerate(curret_dims):
+                    curret_dims[dim] = resize_convolution(val, item.kernel, item.dilation, item.stride, item.padding)
+
+            output_dimension = (output_channels, *curret_dims)
             # Add a non-linear operator if specified by item. Non linear operators also pair with dropout
             # in all the examples I've seen
             if item.non_linear_after:
@@ -103,11 +115,13 @@ def construct_layers(conv_layers, input_dimensions, input_channels, dropout):
         return conv_list, output_dimension
 
 class ConvolutionalKernel(nn.Module):
-    def __init__(self, conv_layers, input_dimensions, input_channels, dropout=None):
-        conv_list, out_dims = construct_layers(conv_layers, input_dimensions, input_channels, dropout)
-
+    def __init__(self, conv_layers, input_dimensions, input_channels, dropout=0, dims=2):
+        super(ConvolutionalKernel, self).__init__()
+        print(input_dimensions, dims)
+        assert len(input_dimensions) == dims
+        conv_list, out_dims = construct_layers(conv_layers, input_dimensions, input_channels, dropout, dims=dims)
         self.conv_layers = nn.Sequential(collections.OrderedDict(conv_list))
-        self.input_dimensions = (*input_dimensions, input_channels)
+        self.input_dimensions = (input_channels, *input_dimensions)
         self.__input__size = functools.reduce(lambda x, y: x*y, self.input_dimensions, 1)
         self.output_dimension = out_dims
 
@@ -117,12 +131,10 @@ class ConvolutionalKernel(nn.Module):
                 nn.init.kaiming_normal_(p)
 
     def forward(self, input):
-
-        H,W, input_channels = self.input_dimensions
-
+        print(input.shape, self.input_dimensions)
         # Magic line of code needed to cast image vector into correct dimensions?
-        input = input.view(-1, input_channels, H, W)
-        outputs = self.conv_layers(input)
+        input = input.view(-1, *self.input_dimensions)
+        output = self.conv_layers(input)
         
         assert not torch.isnan(output).any() # type: ignore
-        return outputs
+        return output

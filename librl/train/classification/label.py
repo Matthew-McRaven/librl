@@ -14,11 +14,15 @@ def train_single_label_classifier(task_samples):
         for dataloader in task.train_data_iter:
             task.classifier.train()
             for batch_idx, (data, target) in enumerate(dataloader):
-                loss, accuracy = task.train_batch(task.classifier, task.criterion, data, target)
+                loss, selected = task.train_batch(task.classifier, task.criterion, data, target)
+                #accuracy = torch.eq(selected, target).sum() / float(target.shape[0])
                 #print(f"Batch {batch_idx} with loss {loss}")
 
         for dataloader in task.validation_data_iter:
             task.classifier.eval()
             for batch_idx, (data, target) in enumerate(dataloader):
-                loss, accuracy = task.validate_batch(task.classifier, task.criterion, data, target)
+                loss, selected = task.validate_batch(task.classifier, task.criterion, data, target)
+                #print(target, selected)
+                accuracy = torch.eq(selected, target).sum() / float(target.shape[0])
+                print(f"Accuracy of {accuracy}")
        

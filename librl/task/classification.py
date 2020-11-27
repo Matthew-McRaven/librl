@@ -34,10 +34,10 @@ def train_one_batch(classifier, criterion, data, target):
     loss.backward()
     classifier.optimizer.step()
     classifier.optimizer.zero_grad()
-    return loss.item(), output.argmax(dim=1, keepdim=True)
+    return loss.item(), output.argmax(dim=1)
 
 # Default implementation that tests a classifier on a single batch of data.
 def test_one_batch(classifier, criterion, data, target):
     output = classifier(data)
     loss = criterion(output, target)
-    return loss.item(), output.argmax(dim=1, keepdim=True)
+    return loss.item(), output.argmax(dim=1)

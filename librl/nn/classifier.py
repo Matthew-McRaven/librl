@@ -13,6 +13,7 @@ class Classifier(nn.Module):
         super(Classifier, self).__init__()
         self.neural_module = neural_module
         self.input_dimension = list(more_itertools.always_iterable(neural_module.output_dimension))
+
         self.output_dimension = output_dimension
         self.__input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
         self.output_layer = nn.Linear(self.__input_size, self.output_dimension)
@@ -30,6 +31,10 @@ class Classifier(nn.Module):
         self.neural_module.restore_hidden(state)
 
     def forward(self, inputs):
+        # Require that outputs be of the shape specified by our neural module.
         outputs = self.neural_module(inputs).view(-1, *self.input_dimension)
+        # Then cast it to something usable by a MLP.
+        outputs = outputs.view(-1, self.__input_size)
         outputs = self.output_layer(outputs)
+
         return outputs

@@ -4,6 +4,7 @@ import torch.utils
 import torchvision.datasets, torchvision.transforms
 
 import librl.nn.core
+import librl.nn.core.cnn
 import librl.nn.classifier
 import librl.task
 import librl.train.train_loop, librl.train.classification
@@ -41,14 +42,20 @@ class TestClassification(unittest.TestCase):
             torchvision.transforms.ToTensor(),
             torchvision.transforms.Normalize((mean, mean, mean), (stdev, stdev, stdev))]) 
 
-        class_kernel = librl.nn.core.MLPKernel((3, 32, 32), (200, 100))
+        conv_list = [
+            librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
+            librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
+            librl.nn.core.cnn.pool_def(1, 1, 0, 1, True, 'max'),
+        ]
+
+        class_kernel = librl.nn.core.ConvolutionalKernel(conv_list, (32, 32), 3)
         class_net = librl.nn.classifier.Classifier(class_kernel, 10)
         
         # Load the CIFAR10 training / validation datasets
         train_dset = torchvision.datasets.CIFAR10("__pycache__/CIFAR10", transform=transformation, download=True)
         validation_dset = torchvision.datasets.CIFAR10("__pycache__/CIFAR10", transform=transformation, train=False)
         # Construct dataloaders from datasets
-        t_loaders, v_loaders = librl.utils.load_split_data(train_dset, 100, 3), librl.utils.load_split_data(validation_dset, 1000, 1)
+        t_loaders, v_loaders = librl.utils.load_split_data(train_dset, 10, 3), librl.utils.load_split_data(validation_dset, 1000, 1)
         # Construct a labelling task.
         self.dist.add_task(librl.task.Task.Definition(librl.task.ClassificationTask, classifier=class_net, criterion=torch.nn.CrossEntropyLoss(), train_data_iter=t_loaders, validation_data_iter=v_loaders))
         librl.train.train_loop.cls_trainer(hypers, self.dist, librl.train.classification.train_single_label_classifier)
