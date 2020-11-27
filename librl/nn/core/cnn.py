@@ -117,8 +117,8 @@ def construct_layers(conv_layers, input_dimensions, input_channels, dropout, dim
 class ConvolutionalKernel(nn.Module):
     def __init__(self, conv_layers, input_dimensions, input_channels, dropout=0, dims=2):
         super(ConvolutionalKernel, self).__init__()
-        print(input_dimensions, dims)
         assert len(input_dimensions) == dims
+        
         conv_list, out_dims = construct_layers(conv_layers, input_dimensions, input_channels, dropout, dims=dims)
         self.conv_layers = nn.Sequential(collections.OrderedDict(conv_list))
         self.input_dimensions = (input_channels, *input_dimensions)
@@ -129,9 +129,11 @@ class ConvolutionalKernel(nn.Module):
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.kaiming_normal_(p)
+                
+    def recurrent(self):
+        return False
 
     def forward(self, input):
-        print(input.shape, self.input_dimensions)
         # Magic line of code needed to cast image vector into correct dimensions?
         input = input.view(-1, *self.input_dimensions)
         output = self.conv_layers(input)

@@ -38,8 +38,10 @@ class MLPKernel(nn.Module):
         for x in self.parameters():
             if x.dim() > 1:
                 nn.init.kaiming_normal_(x)
+
     def recurrent(self):
         return False
+        
     @staticmethod
     def get_default_hyperparameters():
         ret = {}
