@@ -21,6 +21,7 @@ def convert_np_torch(item):
     if item in convert_np_torch._info: return convert_np_torch._info[item]
     elif item == np.float32: return torch.float32 # type: ignore
     elif item == np.int8: return torch.int8 # type: ignore
+    elif item == np.int16: return torch.int16 # type: ignore
     print(f"Dtype ({item}) not implemented.")
     assert 0 and "Dtype not implemented."
 
