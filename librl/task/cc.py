@@ -17,7 +17,7 @@ class ContinuousControlTask(_Task):
         task.init_env()
         for i in range(task.trajectory_count):
             state = torch.tensor(task.env.reset()).to(task.device) # type: ignore
-            episode = librl.replay.Episode(task.env.observation_space, task.env.action_space, task.episode_length)
+            episode = task.replay_ctor(task.env.observation_space, task.env.action_space, task.episode_length)
             episode.log_done(task.episode_length + 1)
             for t in range(task.episode_length):
                 
@@ -39,7 +39,8 @@ class ContinuousControlTask(_Task):
             task.add_trajectory(episode)
 
     # Use sample_trajectories as the default sample, unless otherwise specified.
-    def __init__(self, sample_fn = sample_trajectories.__func__, env=None, agent=None, trajectories=1, episode_length=100):
+    def __init__(self, sample_fn = sample_trajectories.__func__, replay_ctor=librl.replay.episodic.BoxEpisode, 
+    env=None, agent=None, trajectories=1, episode_length=100):
 
         super(ContinuousControlTask,self).__init__(librl.task.ProblemTypes.ContinuousControl)
         assert env is not None and agent is not None
@@ -51,6 +52,7 @@ class ContinuousControlTask(_Task):
         self.trajectory_count = trajectories
 
         self.sample = sample_fn
+        self.replay_ctor = replay_ctor
         self.trajectories = []
 
     # Override in subclass!!

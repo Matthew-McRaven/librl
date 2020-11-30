@@ -6,10 +6,10 @@ import librl.utils
 
 # Enapsulate all replay memory of a single task
 # TODO: Allow data to be moved to GPU, and make device required.
-class Episode:
+class BaseEpisode:
     def __init__(self, obs_space, act_space, episode_length=200, device='cpu'):
-        self.state_buffer = torch.zeros([episode_length, *obs_space.shape], dtype=librl.utils.convert_np_torch(obs_space.dtype)).to(device) # type: ignore
-        self.action_buffer = torch.zeros([episode_length, *act_space.shape], dtype=librl.utils.convert_np_torch(act_space.dtype)).to(device) # type: ignore
+        self.state_buffer =  []
+        self.action_buffer = []
         self.logprob_buffer = torch.zeros([episode_length], dtype=torch.float32).to(device) # type: ignore
         self.reward_buffer = torch.zeros([episode_length], dtype=torch.float32).to(device) # type: ignore
         self.policy_buffer = np.full([episode_length], None, dtype=object)
@@ -28,6 +28,29 @@ class Episode:
         self.done = t
 
     def clear_replay(self):
-        map(lambda x: x.fill_(0).detach_(), [self.state_buffer, self.action_buffer, self.logprob_buffer, self.reward_buffer])
+        map(lambda x: x.fill_(0).detach_(), [self.logprob_buffer, self.reward_buffer])
         self.policy_buffer.fill(None)
         self.done = None
+
+# Episode where action, state are torch contiguous and simple.
+# Therefore, they are torch tensors.
+class BoxEpisode(BaseEpisode):
+    def __init__(self, obs_space, act_space, episode_length=200, device='cpu'):
+        super(BoxEpisode, self).__init__(obs_space, act_space, episode_length=episode_length, device=device)
+        self.state_buffer = torch.zeros([episode_length, *obs_space.shape], dtype=librl.utils.convert_np_torch(obs_space.dtype)).to(device) # type: ignore
+        self.action_buffer = torch.zeros([episode_length, *act_space.shape], dtype=librl.utils.convert_np_torch(act_space.dtype)).to(device) # type: ignore
+    def clear_replay(self):
+        super(BoxEpisode, self).clear_replay()
+        map(lambda x: x.fill_(0).detach_(), [self.state_buffer, self.action_buffer])
+        
+
+# Episode where action, state are cartesian products of tensors
+# Therfore, we must store these elements in lists rather than tensor.
+class ProductEpisode(BaseEpisode):
+    def __init__(self, obs_space, act_space, episode_length=200, device='cpu'):
+        super(ProductEpisode, self).__init__(obs_space, act_space, episode_length=episode_length, device=device)
+        self.state_buffer = np.full([episode_length], None, dtype=object)# type: ignore
+        self.action_buffer = np.full([episode_length], None, dtype=object)# type: ignore
+    def clear_replay(self):
+        super(ProductEpisode, self).clear_replay()
+        map(lambda x: x.fill(0), [self.state_buffer, self.action_buffer])

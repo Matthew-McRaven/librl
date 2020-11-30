@@ -1,1 +1,1 @@
-from .episodic import Episode
+from .episodic import BoxEpisode, ProductEpisode
