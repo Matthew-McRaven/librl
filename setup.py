@@ -11,5 +11,6 @@ setup(name='librl',
       author_email='mkm302@georgetown.edu',
       url='https://github.com/Matthew-McRaven/librl',
       install_reqs = install_reqs,
+      python_requires=' ~= 3.8',
       packages=find_packages()
      )
