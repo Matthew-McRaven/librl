@@ -8,7 +8,7 @@ import librl.agent.pg, librl.agent.mdp
 import librl.nn.core, librl.nn.critic, librl.nn.actor
 import librl.reward
 import librl.task, librl.hypers
-import librl.train.train_loop
+import librl.train.train_loop, librl.train.log
 import librl.train.cc.pg, librl.train.cc.maml
 
 from .antwrapper import AntWrapper
@@ -40,10 +40,12 @@ class Reinforce(unittest.TestCase):
         del self.policy_kernel, self.policy_net, self.agent
 
     def test_policy_grad(self):
-        librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.policy_gradient_step)
+        librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
+            librl.train.cc.policy_gradient_step, librl.train.log.cc_action_reward_logger)
 
     def test_maml(self):
-        librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist, librl.train.cc.maml_meta_step)
+        librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
+            librl.train.cc.maml_meta_step, librl.train.log.cc_action_reward_logger)
 
 if __name__ == '__main__':
     unittest.main()
