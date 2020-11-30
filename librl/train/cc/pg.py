@@ -28,6 +28,8 @@ def _(agent, tasks_iterable):
 def policy_gradient_step(task_samples):
     # Determine which agents are present in this training run.
     agents = { (id(task.agent),task.agent) for task in task_samples}
+    #for _, agent in agents: 
+        #if agent.recurrent(): agent.restore_hidden()
     for task in task_samples:
         assert task.problem_type == librl.task.ProblemTypes.ContinuousControl
         task.sample(task)

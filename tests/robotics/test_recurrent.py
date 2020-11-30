@@ -32,13 +32,12 @@ class ReinforceWithEntropyBonusTest(unittest.TestCase):
         self.env_wrapper.tearDown()
         del self.policy_kernel, self.policy_net, self.agent
 
-    def test_policy_grad(self):
-        librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
-            librl.train.cc.policy_gradient_step, librl.train.log.cc_action_reward_logger)
-
-    def test_maml(self):
-        librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
-            librl.train.cc.maml_meta_step, librl.train.log.cc_action_reward_logger)
+    def test_policy_updates(self):
+        cc = librl.train.cc
+        for idx, alg in enumerate([cc.policy_gradient_step, cc.maml_meta_step]):
+            with self.subTest(i=idx):
+                librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
+                    alg, librl.train.log.cc_action_reward_logger)
 class PGBTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -61,13 +60,12 @@ class PGBTest(unittest.TestCase):
         self.env_wrapper.tearDown()
         del self.policy_kernel, self.policy_net, self.agent, self.value_kernel, self.value_net, self.policy_loss
 
-    def test_policy_grad(self):
-        librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
-            librl.train.cc.policy_gradient_step, librl.train.log.cc_action_reward_logger)
-
-    def test_maml(self):
-        librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
-            librl.train.cc.maml_meta_step, librl.train.log.cc_action_reward_logger)
+    def test_policy_updates(self):
+        cc = librl.train.cc
+        for idx, alg in enumerate([cc.policy_gradient_step, cc.maml_meta_step]):
+            with self.subTest(i=idx):
+                librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
+                    alg, librl.train.log.cc_action_reward_logger)
 
 if __name__ == '__main__':
     unittest.main()
