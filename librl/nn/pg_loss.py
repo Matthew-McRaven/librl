@@ -66,7 +66,7 @@ class PPO(PolicyLoss):
     @overrides # type: ignore
     def compute_trajectory_loss(self, trajectory):
         # Don't propogate gradients into critic when updating actor.
-        with torch.no_grad(): estimated_values = self.critic_fn(trajectory.state_buffer).view(-1)[:trajectory.done]
+        with torch.no_grad(): estimated_values = librl.reward._estimate_values(trajectory, self.critic_fn)
         # Augment rewards with a bonus for exploration, like policy entropy.
         augmented_rewards = trajectory.reward_buffer[:trajectory.done] + self.explore_bonus_fn(trajectory)
         discounted = librl.calc.discounted_returns(augmented_rewards, gamma=self.gamma)

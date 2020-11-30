@@ -10,6 +10,7 @@ For specifications of individual loss functions, see graphity.nn.update_rules
 """
 import copy
 import types
+import functools
 
 import torch
 import torch.nn as nn
@@ -17,6 +18,8 @@ import torch.optim
 
 import librl.agent
 import librl.nn.pg_loss
+import librl.replay
+import librl.reward
 
 # It caches the last generated policy in self.policy_latest, which can be sampled for additional actions.
 @librl.agent.add_agent_attr(allow_update=True, policy_based=True)
@@ -156,9 +159,7 @@ class ActorCriticAgent(nn.Module):
         # TODO: Will need different reshaping for CNN's.
         losses = []
         for trajectory in task.trajectories:
-            states = trajectory.state_buffer[:trajectory.done]
-            states = states.view(-1, *(states.shape[1:]))
-            estimated_values = self.critic_net(states).view(-1, 1)
+            estimated_values = librl.reward._estimate_values(trajectory, self.critic_net).view(-1, 1)
             losses.append(self._critic_loss( estimated_values, trajectory.reward_buffer.view(-1, 1)[:trajectory.done]))
         return sum(losses)
 

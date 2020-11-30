@@ -1,6 +1,32 @@
+import functools
+
 import torch
 
 import librl.calc
+import librl.replay
+
+
+@functools.singledispatch
+def _estimate_values(trajectory, critic_fn, shape=None):
+    raise NotImplementedError("I don't know how to handle this trajectory type!")
+
+@_estimate_values.register(librl.replay.episodic.BoxEpisode)
+def _(trajectory, critic_fn, shape=None):
+    states = trajectory.state_buffer[:trajectory.done]
+    shape = shape if shape else (-1, *(states.shape[1:]))
+    states = states.view(*shape)
+    return critic_fn(states)
+
+@_estimate_values.register(librl.replay.episodic.ProductEpisode)
+def _(trajectory, critic_fn, shape=None):
+    # TODO: Respect shape if present.
+    states = trajectory.state_buffer[:trajectory.done]
+    out = torch.zeros(trajectory.reward_buffer.shape).to(trajectory.reward_buffer.device)
+    for idx, state in enumerate(states):
+        v = critic_fn(state)
+        out[idx] = v 
+    return out
+
 ###################################
 # Exploration Bonuses Computation #
 ###################################
@@ -35,7 +61,7 @@ class baseline_to_go(to_go_reward):
         super(baseline_to_go, self).__init__(gamma=gamma)
         self.critic_fn = critic_fn
     def __call__ (self, trajectory):
-        with torch.no_grad(): estimated_values = self.critic_fn(trajectory.state_buffer).view(-1)[:trajectory.done]
+        with torch.no_grad(): estimated_values = _estimate_values(trajectory, self.critic_fn).view(-1)
         return super().__call__(trajectory) - estimated_values
 
 # Compute the temporal difference residual of the rewards.
@@ -44,5 +70,5 @@ class td_residual:
         self.critic_fn = critic_fn
         self.gamma = gamma
     def __call__(self, trajectory):
-        with torch.no_grad(): estimated_values = self.critic_fn(trajectory.state_buffer).view(-1)[:trajectory.done]
+        with torch.no_grad(): estimated_values = estimated_values = _estimate_values(trajectory, self.critic_fn).view(-1)
         return librl.calc.td_residual(trajectory.reward_buffer[:trajectory.done], estimated_values, gamma=self.gamma)
