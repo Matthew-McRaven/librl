@@ -1,4 +1,5 @@
 import gym
+import numpy as np
 import torch
 
 import librl.replay
@@ -15,8 +16,20 @@ class ContinuousControlTask(_Task):
     def sample_trajectories(task):
         task.clear_trajectories()
         task.init_env()
+
+        # Massage something that looks like a tensor, ndarray to a tensor on the correct device.
+        # If given an iterable of those things, recurssively attempt to massage them into tensors.
+        def torchize(maybe_tensor):
+            # Sometimes an object is a torch tensor that just needs to be moved to the right device
+            if torch.is_tensor(maybe_tensor): return maybe_tensor.to(task.device)
+            # Sometimes it is an ndarray
+            elif isinstance(maybe_tensor, np.ndarray): return torch.tensor(maybe_tensor).to(task.device) # type: ignore
+            # Maybe a simple ierable of things we need to move to torch, like a cartesian product of ndarrays.
+            elif isinstance(maybe_tensor, (list, tuple)): return [torchize(item) for item in maybe_tensor]
+            else: raise NotImplementedError(f"Don't understand the datatype of {type(maybe_tensor)}")
+
         for i in range(task.trajectory_count):
-            state = torch.tensor(task.env.reset()).to(task.device) # type: ignore
+            state = torchize(task.env.reset()) # type: ignore
             episode = task.replay_ctor(task.env.observation_space, task.env.action_space, task.episode_length)
             episode.log_done(task.episode_length + 1)
             for t in range(task.episode_length):
@@ -26,11 +39,12 @@ class ContinuousControlTask(_Task):
                 action, logprob_action = task.agent.act(state)
                 episode.log_action(t, action, logprob_action)
                 if task.agent.policy_based: episode.log_policy(t, task.agent.policy_latest)
-                x = action.view(-1).detach().cpu().numpy()
-                state, reward, done, _ = task.env.step(x)
+                # If our action is a tensor, it needs to be migrated to the CPU for the simulator.
+                if torch.is_tensor(action): action = action.view(-1).detach().cpu().numpy()
+                state, reward, done, _ = task.env.step(action)
+                
                 if task.agent.allow_callback: task.agent.act_callback(state=state, reward=reward)
-                state, reward = torch.tensor(state).to(task.device), torch.tensor(reward).to(task.device) # type: ignore
-
+                state, reward = torchize(state), torch.tensor(reward).to(task.device) # type: ignore
                 episode.log_rewards(t, reward)
                 if done: 
                     episode.log_done(t+1)
