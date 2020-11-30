@@ -1,8 +1,8 @@
 import torch
 
 # Given a buffer of actions and policies, compute the log probability of choosing action[t+1] under policy[t]
-def old_log_probs(action_buffer, policy_buffer):
-    logprob_old = torch.zeros([*policy_buffer.shape], dtype=torch.float32, device=action_buffer.device) # type: ignore
+def old_log_probs(action_buffer, policy_buffer, device):
+    logprob_old = torch.zeros([*policy_buffer.shape], dtype=torch.float32, device=device) # type: ignore
     max_t = policy_buffer.shape[-1] - 1
     # TODO: Figure out what the bootstrap value should be
     logprob_old[max_t] = policy_buffer[max_t].log_prob(action_buffer[max_t]).sum()
