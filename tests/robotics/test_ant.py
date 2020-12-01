@@ -1,127 +1,70 @@
-import functools
-import unittest
+import pytest
 
-import gym
-import pybullet_envs.gym_locomotion_envs
-
-import librl.agent.pg, librl.agent.mdp
-import librl.nn.core, librl.nn.critic, librl.nn.actor
-import librl.reward
-import librl.task, librl.hypers
 import librl.train.train_loop, librl.train.log
 import librl.train.cc.pg, librl.train.cc.maml
+import librl.nn.actor, librl.nn.core, librl.nn.critic, librl.nn.pg_loss
+import librl.agent.pg
 
-from .antwrapper import AntWrapper
+from . import *
 
-class RandomTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.env_wrapper = AntWrapper()
+@pytest.mark.parametrize("agent_type", [RandomAgent, VPGAgent, PGBAgent, PPOAgent])
+@pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
+def test_pg_ant(AntEnv, hypers, train_fn, agent_type):
+    librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent_type(AntEnv, hypers)),
+        train_fn, librl.train.log.cc_action_reward_logger)
 
-    def setUp(self):
-        x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)
-        self.policy_kernel = librl.nn.core.MLPKernel(x)
-        self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env_wrapper.env.action_space, self.env_wrapper.env.observation_space)
+@pytest.mark.parametrize("explore_bonus", [librl.reward.basic_entropy_bonus()])
+@pytest.mark.parametrize("agent_type", [VPGAgent, PGBAgent, PPOAgent])
+@pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step])
+def test_ant_bonus(AntEnv, hypers, train_fn, agent_type, explore_bonus):
+    librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent_type(AntEnv, hypers, explore_bonus=explore_bonus)),
+        train_fn, librl.train.log.cc_action_reward_logger)
 
-        self.agent = librl.agent.mdp.RandomAgent(self.env_wrapper.env.observation_space, self.env_wrapper.env.action_space)
-        self.agent.train()
-        self.env_wrapper.setUp(self.agent)
+@pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
+def test_ant_1d_convolution(AntEnv, hypers, train_fn):
+    conv_list = [
+            librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
+            librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
+            librl.nn.core.cnn.pool_def(1, 1, 0, 1, True, 'max'),
+    ]
+    policy_kernel = librl.nn.core.ConvolutionalKernel(conv_list, AntEnv.observation_space.shape, 1, dims=1)
+    policy_net = librl.nn.actor.IndependentNormalActor(policy_kernel, AntEnv.action_space, AntEnv.observation_space)
 
-    def tearDown(self):
-        self.env_wrapper.tearDown()
-        del self.policy_kernel, self.policy_net, self.agent
+    agent = librl.agent.pg.REINFORCEAgent(policy_net)
+    agent.train()
 
+    librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
+        train_fn, librl.train.log.cc_action_reward_logger)
 
-    def test_policy_updates(self):
-        cc = librl.train.cc
-        for idx, alg in enumerate([cc.policy_gradient_step, cc.maml_meta_step]):
-            with self.subTest(i=idx):
-                librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
-                    alg, librl.train.log.cc_action_reward_logger)
+@pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
+def test_ant_recurrent(AntEnv, hypers, train_fn):
+    x = functools.reduce(lambda x,y: x*y, AntEnv.observation_space.shape, 1)
+    value_kernel = librl.nn.core.RecurrentKernel(x, 113, 1, recurrent_unit="GRU")
+    value_net = librl.nn.critic.ValueCritic(value_kernel)
+    policy_kernel = librl.nn.core.RecurrentKernel(x, 211, 3, recurrent_unit="RNN")
+    policy_net = librl.nn.actor.IndependentNormalActor(policy_kernel, AntEnv.action_space, AntEnv.observation_space)
+    policy_loss = librl.nn.pg_loss.PGB(value_net)
 
-class ReinforceWithEntropyBonusTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.env_wrapper = AntWrapper()
-        
-    def setUp(self):
-        x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)
-        self.policy_kernel = librl.nn.core.MLPKernel(x)
-        self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env_wrapper.env.action_space, self.env_wrapper.env.observation_space)
+    agent = librl.agent.pg.ActorCriticAgent(value_net, policy_net, policy_loss)
+    agent.train()
+    
+    librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
+        train_fn, librl.train.log.cc_action_reward_logger)
 
-        self.agent = librl.agent.pg.REINFORCEAgent(self.policy_net, explore_bonus_fn=librl.reward.basic_entropy_bonus())
-        self.agent.train()
+@pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
+def test_ant_bilinear(AntEnv, hypers, train_fn):
+    conv_list = [
+        librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
+        librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
+        librl.nn.core.cnn.pool_def(1, 1, 0, 1, True, 'max'),
+    ]
+    k0 = librl.nn.core.ConvolutionalKernel(conv_list, AntEnv.observation_space.shape, 1, dims=1)
+    k1 = librl.nn.core.MLPKernel(AntEnv.observation_space.shape, [200, 200])
+    policy_kernel = librl.nn.core.JoinKernel(k0, k1, 20)
+    policy_net = librl.nn.actor.IndependentNormalActor(policy_kernel, AntEnv.action_space, AntEnv.observation_space)
 
-        self.env_wrapper.setUp(self.agent)
-        
-    def tearDown(self):
-        self.env_wrapper.tearDown()
-        del self.policy_kernel, self.policy_net, self.agent
-
-    def test_policy_updates(self):
-        cc = librl.train.cc
-        for idx, alg in enumerate([cc.policy_gradient_step, cc.maml_meta_step]):
-            with self.subTest(i=idx):
-                librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
-                    alg, librl.train.log.cc_action_reward_logger)
-
-class PGBWithEntropyBonusTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.env_wrapper = AntWrapper()
-        
-    def setUp(self):
-        x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)
-        self.value_kernel = librl.nn.core.MLPKernel(x)
-        self.value_net = librl.nn.critic.ValueCritic(self.value_kernel)
-        self.policy_kernel = librl.nn.core.MLPKernel(x)
-        self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env_wrapper.env.action_space, self.env_wrapper.env.observation_space)
-        self.policy_loss = librl.nn.pg_loss.PGB(self.value_net, explore_bonus_fn=librl.reward.basic_entropy_bonus())
-
-        self.agent = librl.agent.pg.ActorCriticAgent(self.value_net, self.policy_net, self.policy_loss)
-        self.agent.train()
-
-        self.env_wrapper.setUp(self.agent)
-        
-    def tearDown(self):
-        self.env_wrapper.tearDown()
-        del self.policy_kernel, self.policy_net, self.agent, self.value_kernel, self.value_net, self.policy_loss
-
-    def test_policy_updates(self):
-        cc = librl.train.cc
-        for idx, alg in enumerate([cc.policy_gradient_step, cc.maml_meta_step]):
-            with self.subTest(i=idx):
-                librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
-                    alg, librl.train.log.cc_action_reward_logger)
-
-class PPOWithEntropyBonusTest(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.env_wrapper = AntWrapper()
-        
-    def setUp(self):
-        x = functools.reduce(lambda x,y: x*y, self.env_wrapper.env.observation_space.shape, 1)
-        self.value_kernel = librl.nn.core.MLPKernel(x)
-        self.value_net = librl.nn.critic.ValueCritic(self.value_kernel)
-        self.policy_kernel = librl.nn.core.MLPKernel(x)
-        self.policy_net = librl.nn.actor.IndependentNormalActor(self.policy_kernel, self.env_wrapper.env.action_space, self.env_wrapper.env.observation_space)
-        self.policy_loss = librl.nn.pg_loss.PPO(self.value_net, explore_bonus_fn=librl.reward.basic_entropy_bonus())
-
-        self.agent = librl.agent.pg.ActorCriticAgent(self.value_net, self.policy_net, self.policy_loss)
-        self.agent.train()
-
-        self.env_wrapper.setUp(self.agent)
-        
-    def tearDown(self):
-        self.env_wrapper.tearDown()
-        del self.policy_kernel, self.policy_net, self.agent, self.value_kernel, self.value_net, self.policy_loss
-
-    def test_policy_updates(self):
-        cc = librl.train.cc
-        for idx, alg in enumerate([cc.policy_gradient_step, cc.maml_meta_step]):
-            with self.subTest(i=idx):
-                librl.train.train_loop.cc_episodic_trainer(self.env_wrapper.hypers, self.env_wrapper.dist,
-                    alg, librl.train.log.cc_action_reward_logger)
-
-if __name__ == '__main__':
-    unittest.main()
+    agent = librl.agent.pg.REINFORCEAgent( policy_net,)
+    agent.train()
+    
+    librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
+        train_fn, librl.train.log.cc_action_reward_logger)

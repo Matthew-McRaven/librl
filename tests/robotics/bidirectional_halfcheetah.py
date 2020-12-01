@@ -1,13 +1,5 @@
 from pybullet_envs.gym_locomotion_envs import HalfCheetahBulletEnv
 import numpy as np
-import librl.task
-class HalfCheetahTask(librl.task.ContinuousControlTask):
-	def __init__(self, forward=True, **kwargs):
-		super(HalfCheetahTask, self).__init__(**kwargs)
-		self.forward = forward
-	def init_env(self):
-		self.env.set_direction(self.forward)
-
 class HalfCheetahDirecBulletEnv(HalfCheetahBulletEnv):
     def __init__(self, forward=True):
         super().__init__()
