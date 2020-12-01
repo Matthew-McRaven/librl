@@ -44,7 +44,11 @@ class ContinuousControlTask(_Task):
                 state, reward, done, _ = task.env.step(action)
                 
                 if task.agent.allow_callback: task.agent.act_callback(state=state, reward=reward)
-                state, reward = torchize(state), torch.tensor(reward).to(task.device) # type: ignore
+                state = torchize(state)
+                # Don't copy reward in to tensor if it already is one; pytorch gets mad.
+                if torch.is_tensor(reward): reward = reward.to(task.device) # type: ignore
+                else: reward = torch.tensor(reward).to(task.device) # type: ignore
+
                 episode.log_rewards(t, reward)
                 if done: 
                     episode.log_done(t+1)
