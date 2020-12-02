@@ -41,9 +41,11 @@ class ContinuousControlTask(_Task):
                 if task.agent.policy_based: episode.log_policy(t, task.agent.policy_latest)
                 # If our action is a tensor, it needs to be migrated to the CPU for the simulator.
                 if torch.is_tensor(action): action = action.view(-1).detach().cpu().numpy()
-                state, reward, done, _ = task.env.step(action)
+                state, reward, done, extra_info = task.env.step(action)
                 
                 if task.agent.allow_callback: task.agent.act_callback(state=state, reward=reward)
+                episode.log_extra_info(t, extra_info)
+
                 state = torchize(state)
                 # Don't copy reward in to tensor if it already is one; pytorch gets mad.
                 if torch.is_tensor(reward): reward = reward.to(task.device) # type: ignore
