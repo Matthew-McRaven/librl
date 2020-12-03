@@ -15,15 +15,15 @@ class BilinearKernel(nn.Module):
 
         self.nlo = nlo if nlo != None else lambda x: x
 
-        self.__left_module = left_module
-        self.__right_module = right_module
+        self._left_module = left_module
+        self._right_module = right_module
 
 
         self.output_dimension = (output_size, )
 
-        self.__left_output__size = functools.reduce(lambda x, y: x*y, left_module.output_dimension, 1)
-        self.__right_output__size = functools.reduce(lambda x, y: x*y, right_module.output_dimension, 1)
-        self.bilinear_layer = nn.Bilinear(self.__left_output__size, self.__right_output__size, output_size)
+        self._left_output_size = functools.reduce(lambda x, y: x*y, left_module.output_dimension, 1)
+        self._right_output_size = functools.reduce(lambda x, y: x*y, right_module.output_dimension, 1)
+        self.bilinear_layer = nn.Bilinear(self._left_output_size, self._right_output_size, output_size)
 
         # Initialize NN
         for x in self.parameters():
@@ -32,32 +32,32 @@ class BilinearKernel(nn.Module):
 
                 
     def recurrent(self):
-        return self.__left_module.recurrent() or self.__right_module.recurrent()
+        return self._left_module.recurrent() or self._right_module.recurrent()
 
     def save_hidden(self):
         ret = {}
         assert self.recurrent()
-        if self.__left_module.recurrent(): ret[id(self.__left_module)] = self.__left_module.save_hidden()
+        if self._left_module.recurrent(): ret[id(self._left_module)] = self._left_module.save_hidden()
         # If the both networks are the same, don't save it twice.
-        if self.__left_module == self.__right_module: pass
-        elif self.__right_module.recurrent(): ret[id(self.__right_module)] = self.__right_module.save_hidden()
+        if self._left_module == self._right_module: pass
+        elif self._right_module.recurrent(): ret[id(self._right_module)] = self._right_module.save_hidden()
         return ret
             
     def restore_hidden(self, state_dict=None):
-        if self.__left_module.recurrent():
-            id_left = id(self.__left_module)
-            if state_dict != None and id_left in state_dict: self.__left_module.restore_hidden(state_dict[id_left])
-            else: self.__left_module.restore_hidden()
+        if self._left_module.recurrent():
+            id_left = id(self._left_module)
+            if state_dict != None and id_left in state_dict: self._left_module.restore_hidden(state_dict[id_left])
+            else: self._left_module.restore_hidden()
         # If the both networks are the same, don't restore twice
-        if self.__left_module == self.__right_module: pass
-        elif self.__right_module.recurrent():
-            id_right = id(self.__right_module)
-            if state_dict != None and id_right in state_dict: self.__right_module.restore_hidden(state_dict[id_right])
-            else: self.__right_module.restore_hidden()
+        if self._left_module == self._right_module: pass
+        elif self._right_module.recurrent():
+            id_right = id(self._right_module)
+            if state_dict != None and id_right in state_dict: self._right_module.restore_hidden(state_dict[id_right])
+            else: self._right_module.restore_hidden()
 
     def forward(self, linput, rinput):
-        loutput = self.__left_module(linput).view(-1, self.__left_output__size)
-        routput = self.__right_module(rinput).view(-1, self.__right_output__size)
+        loutput = self._left_module(linput).view(-1, self._left_output_size)
+        routput = self._right_module(rinput).view(-1, self._right_output_size)
 
         output = self.bilinear_layer(loutput, routput)
         output = self.nlo(output)

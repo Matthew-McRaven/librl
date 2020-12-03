@@ -12,9 +12,9 @@ class ValueCritic(nn.Module):
         super(ValueCritic, self).__init__()
         self.neural_module = neural_module
         self.input_dimension = list(more_itertools.always_iterable(neural_module.output_dimension))
-        self.__input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
+        self._input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
         self.output_dimension = values
-        self.output_layer = torch.nn.Linear(self.__input_size, values) # type: ignore
+        self.output_layer = torch.nn.Linear(self._input_size, values) # type: ignore
 
         for x in self.parameters():
             if x.dim() > 1:

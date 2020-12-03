@@ -20,11 +20,11 @@ class MLPKernel(nn.Module):
         dropout = dropout if dropout else self.get_default_hyperparameters().dropout
         layer_list = layer_list if layer_list else self.get_default_hyperparameters().layer_list
         self.input_dimensions = list(more_itertools.always_iterable(input_dimensions))
-        self.__input__size = functools.reduce(lambda x, y: x*y, self.input_dimensions, 1)
+        self._input_size = functools.reduce(lambda x, y: x*y, self.input_dimensions, 1)
 
         # Build linear layers from input defnition.
         linear_layers = []
-        previous = self.__input__size
+        previous = self._input_size
         for index,layer in enumerate(layer_list):
             linear_layers.append(nn.Linear(previous, layer))
             linear_layers.append(nn.LeakyReLU())
@@ -50,7 +50,7 @@ class MLPKernel(nn.Module):
         return types.SimpleNamespace(**ret)
 
     def forward(self, input):
-        input = input.view(-1, self.__input__size)
+        input = input.view(-1, self._input_size)
         # Push observations through feed forward layers.
         output = self.linear_layers(input.float())
 

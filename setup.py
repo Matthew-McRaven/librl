@@ -5,7 +5,7 @@ install_reqs = []
 install_reqs.extend(["more-itertools", "overrides", "future", "matplotlib", "scipy", "Pillow"])
 install_reqs.extend(["torch ~= 1.7.0", "torchvision ~= 0.8.1", "pytest ~= 6.1"])
 setup(name='librl',
-      version='0.2.4',
+      version='0.2.5',
       description='Library for various DRL and DL projects.',
       author='Matthew McRaven',
       author_email='mkm302@georgetown.edu',

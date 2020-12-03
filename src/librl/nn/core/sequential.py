@@ -13,25 +13,25 @@ import torch.optim
 class SequentialKernel(nn.Module):
     def __init__(self, neural_modules):
         super(SequentialKernel, self).__init__()
-        self.__neural_modules_list = list(more_itertools.always_iterable(neural_modules))
-        self.input_dimensions = self.__neural_modules_list[0].input_dimensions
-        self.output_dimension = self.__neural_modules_list[-1].output_dimension
+        self._neural_modules_list = list(more_itertools.always_iterable(neural_modules))
+        self.input_dimensions = self._neural_modules_list[0].input_dimensions
+        self.output_dimension = self._neural_modules_list[-1].output_dimension
 
-        self.neural_modules = nn.Sequential(*self.__neural_modules_list)
+        self.neural_modules = nn.Sequential(*self._neural_modules_list)
 
                 
     def recurrent(self):
-        for mod in self.__neural_modules_list:
+        for mod in self._neural_modules_list:
             if mod.recurrent(): return True
         else: return False
 
     def save_hidden(self):
         assert self.recurrent()
-        return {id(self.mod): mod.save_hidden() for mod in self.__neural_modules_list if mod.recurrent()}
+        return {id(self.mod): mod.save_hidden() for mod in self._neural_modules_list if mod.recurrent()}
             
 
     def restore_hidden(self, state_dict=None):
-        for mod in self.__neural_modules_list:
+        for mod in self._neural_modules_list:
             if mod.recurrent():
                 if state_dict != None and id(mod) in state_dict: mod.restore_hidden(state_dict[id(mod)])
 

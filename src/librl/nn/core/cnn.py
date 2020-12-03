@@ -122,7 +122,7 @@ class ConvolutionalKernel(nn.Module):
         conv_list, out_dims = construct_layers(conv_layers, input_dimensions, input_channels, dropout, dims=dims)
         self.conv_layers = nn.Sequential(collections.OrderedDict(conv_list))
         self.input_dimensions = (input_channels, *input_dimensions)
-        self.__input__size = functools.reduce(lambda x, y: x*y, self.input_dimensions, 1)
+        self._input_size = functools.reduce(lambda x, y: x*y, self.input_dimensions, 1)
         self.output_dimension = out_dims
 
         # Randomize initial parameters

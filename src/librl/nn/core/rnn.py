@@ -14,7 +14,7 @@ class RecurrentKernel(nn.Module):
         self.num_layers = num_layers
 
         self.input_dimensions = list(more_itertools.always_iterable(input_dimensions))
-        self.__input__size = functools.reduce(lambda x, y: x*y, self.input_dimensions, 1)
+        self._input_size = functools.reduce(lambda x, y: x*y, self.input_dimensions, 1)
         self.output_dimension = (hidden_size, )
 
         
@@ -23,7 +23,7 @@ class RecurrentKernel(nn.Module):
         elif recurrent_unit.upper() == "RNN": rec_init = nn.LSTM
         else:rec_init = lambda *x: (_ for _ in ()).throw(NotImplementedError("Choose an implemented recurrent unit"))
         
-        self.recurrent_layer = rec_init(self.__input__size, hidden_size, num_layers = num_layers, bidirectional=bidirectional, batch_first=False)
+        self.recurrent_layer = rec_init(self._input_size, hidden_size, num_layers = num_layers, bidirectional=bidirectional, batch_first=False)
         self.init_hidden()
         # Initialize NN
         for x in self.parameters():
@@ -69,14 +69,14 @@ class RecurrentKernel(nn.Module):
     def forward(self, input):
         # Treat the entire input as a single seqence of data.
         d0, d1 = 1, -1
-        if len(input.shape) == 1: assert self.__input__size == input.shape[-1]
+        if len(input.shape) == 1: assert self._input_size == input.shape[-1]
         elif len(input.shape) == 2: 
-            assert self.__input__size == input.shape[-1]
+            assert self._input_size == input.shape[-1]
             d0 = input.shape[0]
         elif len(input.shape) == 3: 
             raise NotImplementedError("No clue how to do this.")
         # TODO: Figure out how to batch hidden states
-        input = input.view(d0, d1, self.__input__size)
+        input = input.view(d0, d1, self._input_size)
         # Push observations through feed forward layers.
         if self.hidden_state.shape[1] == 1 and input.shape[1] != 1:
             hidden_state = self.hidden_state.repeat((1,input.shape[1],1))

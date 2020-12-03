@@ -21,7 +21,7 @@ class BiCategoricalActor(nn.Module):
         super(BiCategoricalActor, self).__init__()
         
         self.input_dimension = list(more_itertools.always_iterable(neural_module.output_dimension))
-        self.__input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
+        self._input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
         self.neural_module = neural_module
         self.output_dimension = 2
         assert len (action_space.shape) == 2 and action_space.shape[-1] == 2
@@ -30,8 +30,8 @@ class BiCategoricalActor(nn.Module):
         # Our output layers are used as the seed for some set of random number generators.
         # These random number generators are used to generate edge pairs.
         self.output_layers = {}
-        self.output_layers["first"] = nn.Linear(self.__input_size, observation_space.shape[0])
-        self.output_layers["second"] = nn.Linear(self.__input_size, observation_space.shape[0])
+        self.output_layers["first"] = nn.Linear(self._input_size, observation_space.shape[0])
+        self.output_layers["second"] = nn.Linear(self._input_size, observation_space.shape[0])
         self.output_layers = nn.ModuleDict(self.output_layers)
 
         # Must pass output layers through softmax in order for them to be a proper PDF.
@@ -54,7 +54,7 @@ class BiCategoricalActor(nn.Module):
         self.neural_module.restore_hidden(state)
 
     def forward(self, input):
-        output = self.neural_module(input).view(-1, self.__input_size)
+        output = self.neural_module(input).view(-1, self._input_size)
         actions = []
 
         assert not torch.isnan(output).any() # type: ignore
@@ -94,15 +94,15 @@ class IndependentNormalActor(nn.Module):
         self.policy_ctor = policy_ctor
 
         self.input_dimension = list(more_itertools.always_iterable(neural_module.output_dimension))
-        self.__input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
+        self._input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
         self.neural_module = neural_module
         self.output_dimension = action_space.shape
-        self.__output_size = functools.reduce(lambda x,y: x*y, self.output_dimension, 1)
+        self._output_size = functools.reduce(lambda x,y: x*y, self.output_dimension, 1)
 
         # Our output layers are used as the seed for some set of random number generators.
         # These random number generators are used to generate edge pairs.
-        self.mu_layer = nn.Linear(self.__input_size, self.__output_size)
-        self.cov_diag = nn.Linear(self.__input_size, self.__output_size)
+        self.mu_layer = nn.Linear(self._input_size, self._output_size)
+        self.cov_diag = nn.Linear(self._input_size, self._output_size)
         self.make_sane = torch.nn.Softsign() # type: ignore
 
         # Initialize NN
@@ -122,7 +122,7 @@ class IndependentNormalActor(nn.Module):
         self.neural_module.restore_hidden(state)
 
     def forward(self, input):
-        output = self.neural_module(input).view(-1, self.__input_size)
+        output = self.neural_module(input).view(-1, self._input_size)
 
         # Treat the output of NN as seed of a mu network.
         mu = self.mu_layer(output)

@@ -15,8 +15,8 @@ class Classifier(nn.Module):
         self.input_dimension = list(more_itertools.always_iterable(neural_module.output_dimension))
 
         self.output_dimension = output_dimension
-        self.__input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
-        self.output_layer = nn.Linear(self.__input_size, self.output_dimension)
+        self._input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
+        self.output_layer = nn.Linear(self._input_size, self.output_dimension)
         self.optimizer = torch.optim.Adam(self.parameters(), lr=0.003, weight_decay=0.1)
     
     def recurrent(self):
@@ -34,7 +34,7 @@ class Classifier(nn.Module):
         # Require that outputs be of the shape specified by our neural module.
         outputs = self.neural_module(inputs).view(-1, *self.input_dimension)
         # Then cast it to something usable by a MLP.
-        outputs = outputs.view(-1, self.__input_size)
+        outputs = outputs.view(-1, self._input_size)
         outputs = self.output_layer(outputs)
 
         return outputs

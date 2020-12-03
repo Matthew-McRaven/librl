@@ -14,7 +14,7 @@ class RandomAgent(nn.Module):
         super(RandomAgent, self).__init__()
         self.action_space = action_space
         self.input_dimension = list(more_itertools.always_iterable(observation_space.shape))
-        self.__input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
+        self._input_size = functools.reduce(lambda x,y: x*y, self.input_dimension, 1)
 
     # Our action is just asking the pytorch implementation for a random set of nodes.
     def act(self, inputs):
@@ -22,7 +22,7 @@ class RandomAgent(nn.Module):
 
     # Implement required pytorch interface
     def forward(self, adj):
-        count = adj.view(-1, self.__input_size).shape[0]
+        count = adj.view(-1, self._input_size).shape[0]
         actions = [self.action_space.sample() for _ in range(count)]
         randoms = torch.tensor(actions, device=adj.device) # type: ignore
         # Currently makes little sense to ask "what was the probability of drawing this random action"
