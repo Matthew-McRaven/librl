@@ -42,7 +42,8 @@ def PPOAgent(env, hypers, explore_bonus=lambda x:0):
     return agent    
 def ant_dist(env, hypers, agent):
     dist = librl.task.distribution.TaskDistribution()
-    dist.add_task(librl.task.Task.Definition(librl.task.ContinuousGymTask, env=env, agent=agent, episode_length=hypers['episode_length']))
+    dist.add_task(librl.task.Task.Definition(librl.task.ContinuousGymTask, env=env, agent=agent, 
+    episode_length=hypers['episode_length'], device=hypers['device']))
     return dist
 
 class HalfCheetahTask(librl.task.ContinuousControlTask):
@@ -54,6 +55,8 @@ class HalfCheetahTask(librl.task.ContinuousControlTask):
 
 def cheetah_dist(env, hypers, agent):
     dist = librl.task.distribution.TaskDistribution()
-    dist.add_task(librl.task.Task.Definition(HalfCheetahTask, forward=True,  env=env, agent=agent, episode_length=hypers['episode_length']))
-    dist.add_task(librl.task.Task.Definition(HalfCheetahTask, forward=False, env=env, agent=agent, episode_length=hypers['episode_length']))
+    dist.add_task(librl.task.Task.Definition(HalfCheetahTask, forward=True,  env=env, 
+    agent=agent, episode_length=hypers['episode_length'], device=hypers['device']))
+    dist.add_task(librl.task.Task.Definition(HalfCheetahTask, forward=False, env=env, 
+    agent=agent, episode_length=hypers['episode_length'], device=hypers['device']))
     return dist

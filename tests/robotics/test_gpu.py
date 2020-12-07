@@ -14,6 +14,7 @@ from . import *
 @pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")
 @pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
 def test_ant_1d_convolution_gpu(AntEnv, hypers, train_fn):
+    hypers['device'] = 'cuda'
     conv_list = [
             librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
             librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
@@ -23,7 +24,7 @@ def test_ant_1d_convolution_gpu(AntEnv, hypers, train_fn):
     policy_net = librl.nn.actor.IndependentNormalActor(policy_kernel, AntEnv.action_space, AntEnv.observation_space)
 
     agent = librl.agent.pg.REINFORCEAgent(policy_net)
-    agent = torch.cuda(agent)
+    agent = agent.to('cuda')
     agent.train()
 
     librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
@@ -32,6 +33,7 @@ def test_ant_1d_convolution_gpu(AntEnv, hypers, train_fn):
 @pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")        
 @pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
 def test_ant_recurrent(AntEnv, hypers, train_fn):
+    hypers['device'] = 'cuda'
     x = functools.reduce(lambda x,y: x*y, AntEnv.observation_space.shape, 1)
     value_kernel = librl.nn.core.RecurrentKernel(x, 113, 1, recurrent_unit="GRU")
     value_net = librl.nn.critic.ValueCritic(value_kernel)
@@ -40,7 +42,7 @@ def test_ant_recurrent(AntEnv, hypers, train_fn):
     policy_loss = librl.nn.pg_loss.PGB(value_net)
 
     agent = librl.agent.pg.ActorCriticAgent(value_net, policy_net, policy_loss)
-    agent = torch.cuda(agent)
+    agent = agent.to('cuda')
     agent.train()
     
     librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
@@ -49,6 +51,7 @@ def test_ant_recurrent(AntEnv, hypers, train_fn):
 @pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")   
 @pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
 def test_ant_bilinear(AntEnv, hypers, train_fn):
+    hypers['device'] = 'cuda'
     conv_list = [
         librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
         librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
@@ -60,7 +63,7 @@ def test_ant_bilinear(AntEnv, hypers, train_fn):
     policy_net = librl.nn.actor.IndependentNormalActor(policy_kernel, AntEnv.action_space, AntEnv.observation_space)
 
     agent = librl.agent.pg.REINFORCEAgent( policy_net,)
-    agent = torch.cuda(agent)
+    agent = agent.to('cuda')
     agent.train()
     
     librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
