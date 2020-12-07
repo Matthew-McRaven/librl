@@ -6,10 +6,16 @@ import librl.train.train_loop, librl.train.classification
 
 from . import *
 
+###################
+# GPU Based Tests #
+###################
+@pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")
 @pytest.mark.parametrize('nn_kind', ['cnn', 'mlp'])
 def test_label_images(image_dataset, nn_kind, hypers):
     dset, dims, labels = image_dataset
     class_net = build_class_net(nn_kind, dims, labels)
+    class_net = torch.cuda(class_net)
+
     t,v = dset.t_loaders, dset.v_loaders
     
     # Construct a labelling task.

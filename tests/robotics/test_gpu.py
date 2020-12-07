@@ -8,21 +8,12 @@ import librl.agent.pg
 
 from . import *
 
-@pytest.mark.parametrize("agent_type", [RandomAgent, VPGAgent, PGBAgent, PPOAgent])
+###################
+# GPU Based Tests #
+###################
+@pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")
 @pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
-def test_pg_ant(AntEnv, hypers, train_fn, agent_type):
-    librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent_type(AntEnv, hypers)),
-        train_fn, librl.train.log.cc_action_reward_logger)
-
-@pytest.mark.parametrize("explore_bonus", [librl.reward.basic_entropy_bonus()])
-@pytest.mark.parametrize("agent_type", [VPGAgent, PGBAgent, PPOAgent])
-@pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step])
-def test_ant_bonus(AntEnv, hypers, train_fn, agent_type, explore_bonus):
-    librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent_type(AntEnv, hypers, explore_bonus=explore_bonus)),
-        train_fn, librl.train.log.cc_action_reward_logger)
-
-@pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
-def test_ant_1d_convolution(AntEnv, hypers, train_fn):
+def test_ant_1d_convolution_gpu(AntEnv, hypers, train_fn):
     conv_list = [
             librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
             librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
@@ -32,11 +23,13 @@ def test_ant_1d_convolution(AntEnv, hypers, train_fn):
     policy_net = librl.nn.actor.IndependentNormalActor(policy_kernel, AntEnv.action_space, AntEnv.observation_space)
 
     agent = librl.agent.pg.REINFORCEAgent(policy_net)
+    agent = torch.cuda(agent)
     agent.train()
 
     librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
         train_fn, librl.train.log.cc_action_reward_logger)
 
+@pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")        
 @pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
 def test_ant_recurrent(AntEnv, hypers, train_fn):
     x = functools.reduce(lambda x,y: x*y, AntEnv.observation_space.shape, 1)
@@ -47,6 +40,27 @@ def test_ant_recurrent(AntEnv, hypers, train_fn):
     policy_loss = librl.nn.pg_loss.PGB(value_net)
 
     agent = librl.agent.pg.ActorCriticAgent(value_net, policy_net, policy_loss)
+    agent = torch.cuda(agent)
+    agent.train()
+    
+    librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
+        train_fn, librl.train.log.cc_action_reward_logger)
+
+@pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")   
+@pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
+def test_ant_bilinear(AntEnv, hypers, train_fn):
+    conv_list = [
+        librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
+        librl.nn.core.cnn.conv_def(4, 4, 1, 0, 1, False),
+        librl.nn.core.cnn.pool_def(1, 1, 0, 1, True, 'max'),
+    ]
+    k0 = librl.nn.core.ConvolutionalKernel(conv_list, AntEnv.observation_space.shape, 1, dims=1)
+    k1 = librl.nn.core.MLPKernel(AntEnv.observation_space.shape, [200, 200])
+    policy_kernel = librl.nn.core.JoinKernel(k0, k1, 20)
+    policy_net = librl.nn.actor.IndependentNormalActor(policy_kernel, AntEnv.action_space, AntEnv.observation_space)
+
+    agent = librl.agent.pg.REINFORCEAgent( policy_net,)
+    agent = torch.cuda(agent)
     agent.train()
     
     librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
