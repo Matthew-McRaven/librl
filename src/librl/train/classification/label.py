@@ -15,11 +15,13 @@ def train_single_label_classifier(task_samples):
         for dataloader in task.train_data_iter:
             task.classifier.train()
             for batch_idx, (data, target) in enumerate(dataloader):
+                data, target = data.to(task.device), target.to(task.device)
                 loss, selected = task.train_batch(task.classifier, task.criterion, data, target)
         local_correct, local_total = 0,0
         for dataloader in task.validation_data_iter:
             task.classifier.eval()
             for batch_idx, (data, target) in enumerate(dataloader):
+                data, target = data.to(task.device), target.to(task.device)
                 loss, selected = task.validate_batch(task.classifier, task.criterion, data, target)
                 local_correct += torch.eq(selected, target).sum() 
                 local_total += float(target.shape[0])

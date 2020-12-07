@@ -86,8 +86,8 @@ class RecurrentKernel(nn.Module):
             cell_state = self.cell_state.repeat((1,input.shape[1],1))
         else: cell_state = self.cell_state
 
-        h0 = hidden_state, cell_state
-        output, h1 = self.recurrent_layer(input.float(), h0)
+        h0 = hidden_state.to(input.device), cell_state.to(input.device)
+        output, h1 = self.recurrent_layer(input, h0)
 
         self.hidden_state, self.cell_state = h1
         # We really dont care about the progress / history of our state data.

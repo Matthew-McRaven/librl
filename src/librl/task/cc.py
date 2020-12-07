@@ -30,7 +30,10 @@ class ContinuousControlTask(_Task):
 
         for i in range(task.trajectory_count):
             state = torchize(task.env.reset()) # type: ignore
-            episode = task.replay_ctor(task.env.observation_space, task.env.action_space, task.episode_length)
+            episode = task.replay_ctor(task.env.observation_space, 
+                task.env.action_space, task.episode_length, 
+                device=task.device
+            )
             episode.log_done(task.episode_length + 1)
             for t in range(task.episode_length):
                 
@@ -60,9 +63,9 @@ class ContinuousControlTask(_Task):
 
     # Use sample_trajectories as the default sample, unless otherwise specified.
     def __init__(self, sample_fn = sample_trajectories.__func__, replay_ctor=librl.replay.episodic.BoxEpisode, 
-    env=None, agent=None, trajectories=1, episode_length=100):
+    env=None, agent=None, trajectories=1, episode_length=100, **kwargs):
 
-        super(ContinuousControlTask,self).__init__(librl.task.ProblemTypes.ContinuousControl)
+        super(ContinuousControlTask,self).__init__(librl.task.ProblemTypes.ContinuousControl, **kwargs)
         assert env is not None and agent is not None
         assert isinstance(env, gym.Env)
 

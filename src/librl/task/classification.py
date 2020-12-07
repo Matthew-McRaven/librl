@@ -10,7 +10,7 @@ from .base import Task as _Task
 # with high portability to the testing data.
 # train_data_iter, validation_data_iter should be an iterable of DataLoaders rather than bare DataLoaders.
 class ClassificationTask(_Task):
-    def __init__(self, classifier=None, criterion=None, train_data_iter=None, validation_data_iter=None, train=True,**kwargs):
+    def __init__(self, classifier=None, criterion=None, train_data_iter=None, validation_data_iter=None, train=True, **kwargs):
         super(ClassificationTask, self).__init__(librl.task.ProblemTypes.Classification, **kwargs)
         assert classifier is not None and criterion is not None
         assert (train_data_iter is not None) or (validation_data_iter is not None)
