@@ -1,3 +1,6 @@
 .git
-venv/
+# Ignore anv virtualenv looking files.
+**/venv*/
+# Ignore root pycache, ignore any nested pycache directories
 __pycache__
+**/__pycache__/**/*

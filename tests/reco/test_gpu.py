@@ -10,7 +10,7 @@ from . import *
 ###################
 # GPU Based Tests #
 ###################
-@pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="GPU tests require CUDA.")
 @pytest.mark.parametrize('nn_kind', ['cnn', 'mlp'])
 def test_label_images(image_dataset, nn_kind, hypers):
     dset, dims, labels = image_dataset
@@ -21,5 +21,9 @@ def test_label_images(image_dataset, nn_kind, hypers):
     
     # Construct a labelling task.
     dist = librl.task.distribution.TaskDistribution()
-    dist.add_task(librl.task.Task.Definition(librl.task.ClassificationTask, device="cuda", classifier=class_net, criterion=torch.nn.CrossEntropyLoss(), train_data_iter=t, validation_data_iter=v))
+    dist.add_task(librl.task.Task.Definition(librl.task.ClassificationTask, 
+        classifier=class_net, criterion=torch.nn.CrossEntropyLoss(),
+        train_data_iter=t, validation_data_iter=v,train_percent=.2, 
+        validation_percent=.1, device="cuda")
+    )
     librl.train.train_loop.cls_trainer(hypers, dist, librl.train.classification.train_single_label_classifier)

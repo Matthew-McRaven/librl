@@ -11,7 +11,7 @@ from . import *
 ###################
 # GPU Based Tests #
 ###################
-@pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="GPU tests require CUDA.")
 @pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
 def test_ant_1d_convolution_gpu(AntEnv, hypers, train_fn):
     hypers['device'] = 'cuda'
@@ -30,7 +30,7 @@ def test_ant_1d_convolution_gpu(AntEnv, hypers, train_fn):
     librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
         train_fn, librl.train.log.cc_action_reward_logger)
 
-@pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")        
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="GPU tests require CUDA.")        
 @pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
 def test_ant_recurrent(AntEnv, hypers, train_fn):
     hypers['device'] = 'cuda'
@@ -48,7 +48,7 @@ def test_ant_recurrent(AntEnv, hypers, train_fn):
     librl.train.train_loop.cc_episodic_trainer(hypers, ant_dist(AntEnv, hypers, agent),
         train_fn, librl.train.log.cc_action_reward_logger)
 
-@pytest.mark.skipif(not torch.has_cuda, reason="GPU tests require CUDA.")   
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="GPU tests require CUDA.")   
 @pytest.mark.parametrize('train_fn', [librl.train.cc.policy_gradient_step, librl.train.cc.maml_meta_step])
 def test_ant_bilinear(AntEnv, hypers, train_fn):
     hypers['device'] = 'cuda'

@@ -7,9 +7,4 @@ RUN pip install -r /librl/install/requirements.txt
 FROM base as build
 COPY . /librl/source
 WORKDIR /librl/source
-RUN pip wheel . -w /librl/install
-
-# Output image only contains the built wheel and installed requirements.
-FROM build as output
-COPY --from=base /librl/install/ /librl/install
-RUN pip install $(find /librl/install -type f -iname "*.whl")
+RUN pip install -e .
