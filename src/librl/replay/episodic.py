@@ -23,6 +23,7 @@ class BaseEpisode:
         self.action_buffer[t] = action
         self.logprob_buffer[t] = logprob
     def log_rewards(self, t, reward):
+        assert reward.device == self.reward_buffer.device
         self.reward_buffer[t] = reward
     def log_policy(self, t, policy):
         self.policy_buffer[t]= policy
@@ -49,6 +50,13 @@ class BoxEpisode(BaseEpisode):
             device=device, enable_extra=enable_extra)
         self.state_buffer = torch.zeros([episode_length, *obs_space.shape], dtype=librl.utils.convert_np_torch(obs_space.dtype)).to(device) # type: ignore
         self.action_buffer = torch.zeros([episode_length, *act_space.shape], dtype=librl.utils.convert_np_torch(act_space.dtype)).to(device) # type: ignore
+    def log_state(self, t, state):
+        assert state.device == self.state_buffer.device
+        self.state_buffer[t] = state    
+    def log_action(self, t, action, logprob):
+        assert action.device == self.action_buffer.device
+        self.action_buffer[t] = action
+        self.logprob_buffer[t] = logprob
     def clear_replay(self):
         super(BoxEpisode, self).clear_replay()
         map(lambda x: x.fill_(0).detach_(), [self.state_buffer, self.action_buffer])
