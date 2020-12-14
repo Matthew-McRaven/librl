@@ -19,8 +19,8 @@ class RecurrentKernel(nn.Module):
 
         
         if recurrent_unit.upper() == "LSTM": rec_init = nn.LSTM
-        elif recurrent_unit.upper() == "GRU": rec_init = nn.LSTM
-        elif recurrent_unit.upper() == "RNN": rec_init = nn.LSTM
+        elif recurrent_unit.upper() == "GRU": rec_init = nn.GRU
+        elif recurrent_unit.upper() == "RNN": rec_init = nn.RNN
         else:rec_init = lambda *x: (_ for _ in ()).throw(NotImplementedError("Choose an implemented recurrent unit"))
         
         self.recurrent_layer = rec_init(self._input_size, hidden_size, num_layers = num_layers, bidirectional=bidirectional, batch_first=False)
